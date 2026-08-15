@@ -1,0 +1,175 @@
+<!doctype html>
+<!--
+  Lekcja-wzorzec (pl). Ręcznie napisana, żeby fazę 05 dało się sprawdzić bez modelu,
+  a faza 06 miała czym karmić prompt lekcji. {{projectId}}/{{lessonId}} podstawia
+  scripts/seed-fixture.js przy kopiowaniu do prawdziwego projektu.
+-->
+<html lang="pl" data-theme="jasny">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Czym jest dźwięk</title>
+    <link rel="stylesheet" href="/theme.css" />
+    <link rel="stylesheet" href="/print.css" media="print" />
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body data-project="{{projectId}}" data-lesson="{{lessonId}}" data-lang="pl">
+    <header class="lekcja-naglowek"><h1>Czym jest dźwięk</h1></header>
+
+    <section id="teoria">
+      <h2>Teoria</h2>
+
+      <section class="pojecie">
+        <h3>Częstotliwość i wysokość</h3>
+        <p>
+          Dźwięk jest drganiem powietrza. Liczba pełnych drgań w ciągu sekundy to
+          <strong>częstotliwość</strong>, mierzona w hercach (Hz). Im drgań więcej, tym dźwięk
+          brzmi wyżej.
+        </p>
+        <p>
+          Zależność jest prosta i wszędzie taka sama: podwojenie częstotliwości podnosi dźwięk
+          o oktawę. Dźwięk A o częstotliwości 220 Hz i A o 440 Hz to ten sam dźwięk w dwóch
+          oktawach.
+        </p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 472 200" role="img" aria-label="Dwie fale: 220 Hz i 440 Hz">
+            <line class="os" x1="20" y1="55" x2="452" y2="55" />
+            <line class="os" x1="20" y1="145" x2="452" y2="145" />
+            <path
+              class="fala"
+              stroke="var(--wiz-1)"
+              d="M20 55 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0
+                 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0
+                 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0
+                 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0"
+            />
+            <path
+              class="fala"
+              stroke="var(--wiz-2)"
+              d="M20 145 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0"
+            />
+            <text class="opis" x="20" y="22">220 Hz — A</text>
+            <text class="opis" x="20" y="112">440 Hz — A oktawę wyżej</text>
+          </svg>
+          <figcaption>Ta sama amplituda, dwie częstotliwości</figcaption>
+        </figure>
+
+        <div class="mikro-pytanie">
+          <p>Ile herców ma dźwięk leżący oktawę wyżej niż 330 Hz?</p>
+          <div data-chowane>
+            <p>660 Hz. Oktawa to zawsze stosunek 2:1, niezależnie od tego, od czego zaczynamy.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pojecie">
+        <h3>Amplituda i głośność</h3>
+        <p>
+          <strong>Amplituda</strong> to wielkość wychylenia drgania — jak mocno powietrze zostaje
+          ściśnięte i rozrzedzone. Ucho odbiera ją jako głośność, mierzoną w decybelach (dB).
+        </p>
+        <p>
+          Skala decybelowa jest logarytmiczna: wzrost o 10 dB odbieramy mniej więcej jako
+          dwukrotnie głośniejszy dźwięk, choć energia rośnie dziesięciokrotnie. Amplituda nie ma
+          nic wspólnego z wysokością — te dwie rzeczy zmieniają się niezależnie.
+        </p>
+
+        <div class="mikro-pytanie">
+          <p>
+            Dwa dźwięki mają tę samą częstotliwość, ale drugi ma dwa razy większą amplitudę. Co je
+            różni?
+          </p>
+          <div data-chowane>
+            <p>
+              Tylko głośność. Wysokość niesie częstotliwość, więc pozostaje bez zmian — to ten sam
+              dźwięk zagrany mocniej.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pojecie">
+        <h3>Barwa i alikwoty</h3>
+        <p>
+          Ton prosty — czysta sinusoida — prawie nie występuje w naturze. Realny dźwięk jest sumą
+          składowej podstawowej i <strong>alikwotów</strong>: drgań o częstotliwościach będących jej
+          całkowitymi wielokrotnościami.
+        </p>
+        <p>
+          Wysokość słyszymy po składowej podstawowej, a proporcje amplitud alikwotów dają
+          <strong>barwę</strong>. Dlatego skrzypce i flet grające to samo A 440 Hz są rozpoznawalne
+          po jednym dźwięku.
+        </p>
+
+        <div class="mikro-pytanie">
+          <p>Skrzypce i flet grają A 440 Hz. Co dokładnie je odróżnia?</p>
+          <div data-chowane>
+            <p>
+              Proporcje alikwotów, czyli barwa. Częstotliwość podstawowa jest w obu przypadkach
+              identyczna.
+            </p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="praktyka">
+      <h2>Praktyka</h2>
+
+      <section class="cwiczenie">
+        <h3>Ćwiczenie 1 — oktawy w liczbach</h3>
+        <p>Wypisz częstotliwości czterech kolejnych oktaw dźwięku A, zaczynając od 110 Hz.</p>
+        <div data-chowane>
+          <p>110 Hz, 220 Hz, 440 Hz, 880 Hz. Każdy krok to podwojenie poprzedniej wartości.</p>
+        </div>
+      </section>
+
+      <section class="cwiczenie">
+        <h3>Ćwiczenie 2 — dwa przedmioty</h3>
+        <p>
+          Znajdź w pokoju dwa przedmioty wydające dźwięk o wyraźnie różnej wysokości (np. szklanka
+          i kubek). Powiedz, który z nich drga szybciej.
+        </p>
+        <div data-chowane>
+          <p>
+            Szybciej drga ten, który brzmi wyżej. Mniejsza i sztywniejsza rzecz zwykle drga szybciej,
+            więc daje wyższy dźwięk.
+          </p>
+        </div>
+      </section>
+
+      <section class="cwiczenie">
+        <h3>Ćwiczenie 3 — cicho i głośno</h3>
+        <p>Zanuć ten sam dźwięk dwa razy: raz cicho, raz głośno. Nazwij, co się nie zmieniło.</p>
+        <div data-chowane>
+          <p>
+            Nie zmieniła się częstotliwość, czyli wysokość. Zmieniła się wyłącznie amplituda —
+            to samo drganie o innej sile.
+          </p>
+        </div>
+      </section>
+    </section>
+
+    <section id="sprawdzian" class="sprawdzian"></section>
+
+    <section id="sugestie" class="sugestie">
+      <h2>Co dalej</h2>
+      <ul>
+        <li>Powtórka: przelicz oktawy dźwięku C, zaczynając od 65 Hz.</li>
+        <li>Rozwinięcie: strój równomiernie temperowany i dlaczego oktawa ma 12 półtonów.</li>
+        <li>Nowy wątek: rezonans i rola pudła rezonansowego w instrumencie.</li>
+      </ul>
+    </section>
+
+    <script type="module" src="/runtime.js"></script>
+    <script type="module" src="lesson.js"></script>
+  </body>
+</html>

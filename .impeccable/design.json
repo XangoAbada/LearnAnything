@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-15T00:00:00.000Z",
+  "title": "Design System: LearnAnything",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Arkusz",
+        "canonical": "oklch(95.2% 0.008 91.5)",
+        "tonalRamp": ["oklch(15% 0.008 91.5)", "oklch(26% 0.008 91.5)", "oklch(38% 0.008 91.5)", "oklch(49% 0.008 91.5)", "oklch(61% 0.008 91.5)", "oklch(72% 0.008 91.5)", "oklch(84% 0.008 91.5)", "oklch(95% 0.008 91.5)"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Papier uniesiony",
+        "canonical": "oklch(98.5% 0.004 91.4)",
+        "tonalRamp": ["oklch(15% 0.004 91.4)", "oklch(26% 0.004 91.4)", "oklch(38% 0.004 91.4)", "oklch(49% 0.004 91.4)", "oklch(61% 0.004 91.4)", "oklch(72% 0.004 91.4)", "oklch(84% 0.004 91.4)", "oklch(95% 0.004 91.4)"]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Cień papieru (druga strona kartki)",
+        "canonical": "oklch(91.6% 0.013 91.5)",
+        "tonalRamp": ["oklch(15% 0.013 91.5)", "oklch(26% 0.013 91.5)", "oklch(38% 0.013 91.5)", "oklch(49% 0.013 91.5)", "oklch(61% 0.013 91.5)", "oklch(72% 0.013 91.5)", "oklch(84% 0.013 91.5)", "oklch(95% 0.013 91.5)"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Atrament",
+        "canonical": "oklch(14.5% 0.000 89.9)",
+        "tonalRamp": ["oklch(15% 0.000 89.9)", "oklch(26% 0.000 89.9)", "oklch(38% 0.000 89.9)", "oklch(49% 0.000 89.9)", "oklch(61% 0.000 89.9)", "oklch(72% 0.000 89.9)", "oklch(84% 0.000 89.9)", "oklch(95% 0.000 89.9)"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Ołówek",
+        "canonical": "oklch(47.9% 0.012 87.5)",
+        "tonalRamp": ["oklch(15% 0.012 87.5)", "oklch(26% 0.012 87.5)", "oklch(38% 0.012 87.5)", "oklch(49% 0.012 87.5)", "oklch(61% 0.012 87.5)", "oklch(72% 0.012 87.5)", "oklch(84% 0.012 87.5)", "oklch(95% 0.012 87.5)"],
+        "note": "Przyciemniony do #605d56 przez ziarno papieru: 4,36:1 → 5,06:1 na arkuszu i 6,29:1 w panelu."
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Krawędź",
+        "canonical": "oklch(83.3% 0.016 90.3)",
+        "tonalRamp": ["oklch(15% 0.016 90.3)", "oklch(26% 0.016 90.3)", "oklch(38% 0.016 90.3)", "oklch(49% 0.016 90.3)", "oklch(61% 0.016 90.3)", "oklch(72% 0.016 90.3)", "oklch(84% 0.016 90.3)", "oklch(95% 0.016 90.3)"]
+      },
+      "crease-m": {
+        "role": "neutral",
+        "displayName": "Zagięcie górskie",
+        "canonical": "oklch(77.6% 0.012 89.7)",
+        "tonalRamp": ["oklch(15% 0.012 89.7)", "oklch(26% 0.012 89.7)", "oklch(38% 0.012 89.7)", "oklch(49% 0.012 89.7)", "oklch(61% 0.012 89.7)", "oklch(72% 0.012 89.7)", "oklch(84% 0.012 89.7)", "oklch(95% 0.012 89.7)"]
+      },
+      "crease-v": {
+        "role": "tertiary",
+        "displayName": "Błękit zagięcia dolinnego",
+        "canonical": "oklch(81.6% 0.058 251.7)",
+        "tonalRamp": ["oklch(15% 0.058 251.7)", "oklch(26% 0.058 251.7)", "oklch(38% 0.058 251.7)", "oklch(49% 0.058 251.7)", "oklch(61% 0.058 251.7)", "oklch(72% 0.058 251.7)", "oklch(84% 0.058 251.7)", "oklch(95% 0.058 251.7)"]
+      },
+      "foil": {
+        "role": "primary",
+        "displayName": "Złota folia",
+        "canonical": "oklch(76.7% 0.139 91.1)",
+        "tonalRamp": ["oklch(15% 0.139 91.1)", "oklch(26% 0.139 91.1)", "oklch(38% 0.139 91.1)", "oklch(49% 0.139 91.1)", "oklch(61% 0.139 91.1)", "oklch(72% 0.139 91.1)", "oklch(84% 0.139 91.1)", "oklch(95% 0.139 91.1)"],
+        "note": "Nigdy płasko: gradient 102° foil-deep → foil-lite → foil z ziarnem --foil-grain."
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Granat interakcji",
+        "canonical": "oklch(43.7% 0.114 257.1)",
+        "tonalRamp": ["oklch(15% 0.114 257.1)", "oklch(26% 0.114 257.1)", "oklch(38% 0.114 257.1)", "oklch(49% 0.114 257.1)", "oklch(61% 0.114 257.1)", "oklch(72% 0.114 257.1)", "oklch(84% 0.114 257.1)", "oklch(95% 0.114 257.1)"]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "Zieleń powodzenia",
+        "canonical": "oklch(49.0% 0.084 159.2)",
+        "tonalRamp": ["oklch(15% 0.084 159.2)", "oklch(26% 0.084 159.2)", "oklch(38% 0.084 159.2)", "oklch(49% 0.084 159.2)", "oklch(61% 0.084 159.2)", "oklch(72% 0.084 159.2)", "oklch(84% 0.084 159.2)", "oklch(95% 0.084 159.2)"]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Ochra pracy w toku",
+        "canonical": "oklch(54.8% 0.111 75.1)",
+        "tonalRamp": ["oklch(15% 0.111 75.1)", "oklch(26% 0.111 75.1)", "oklch(38% 0.111 75.1)", "oklch(49% 0.111 75.1)", "oklch(61% 0.111 75.1)", "oklch(72% 0.111 75.1)", "oklch(84% 0.111 75.1)", "oklch(95% 0.111 75.1)"]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Czerwień złego zagięcia",
+        "canonical": "oklch(49.3% 0.158 32.1)",
+        "tonalRamp": ["oklch(15% 0.158 32.1)", "oklch(26% 0.158 32.1)", "oklch(38% 0.158 32.1)", "oklch(49% 0.158 32.1)", "oklch(61% 0.158 32.1)", "oklch(72% 0.158 32.1)", "oklch(84% 0.158 32.1)", "oklch(95% 0.158 32.1)"]
+      },
+      "done": {
+        "role": "tertiary",
+        "displayName": "Złoto przygaszone (ukończona)",
+        "canonical": "oklch(50.6% 0.095 90.2)",
+        "tonalRamp": ["oklch(15% 0.095 90.2)", "oklch(26% 0.095 90.2)", "oklch(38% 0.095 90.2)", "oklch(49% 0.095 90.2)", "oklch(61% 0.095 90.2)", "oklch(72% 0.095 90.2)", "oklch(84% 0.095 90.2)", "oklch(95% 0.095 90.2)"],
+        "note": "Wersja folii dopuszczona jako kolor tekstu — sama --foil nigdy nie jest atramentem."
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Michroma)", "purpose": "Tytuł ekranu należący do aplikacji, wersalikami, z kreską nacięcia pod spodem." },
+      "brand": { "displayName": "Brand (Michroma)", "purpose": "Nazwa w linijce arkusza; światło rośnie z szerokością, żeby nazwa się nie łamała." },
+      "subject": { "displayName": "Subject (mono)", "purpose": "Tytuł ekranu niosący temat użytkownika — świadoma rezygnacja z kroju display." },
+      "question": { "displayName": "Question", "purpose": "Pytanie wywiadu; jedyny tekst czytany większy i wytłuszczony." },
+      "title": { "displayName": "Title", "purpose": "Tytuł pakietu kursu w siatce." },
+      "section": { "displayName": "Section (h2)", "purpose": "Etykieta sekcji wersalikami w kolorze ołówka, nie nagłówek treści." },
+      "body": { "displayName": "Body", "purpose": "Tekst czytany, miara do 64ch." },
+      "control": { "displayName": "Control", "purpose": "Wszystkie przyciski." },
+      "label": { "displayName": "Label", "purpose": "Etykiety pól, dt bloku spec, znaczniki stanu, link powrotu." },
+      "code": { "displayName": "Code", "purpose": "Kody arkusza i pozycji (M-01, V-02) oraz liczniki, tabular-nums." }
+    },
+    "shadows": [
+      { "name": "drop", "value": "drop-shadow(0 2px 3px rgb(10 10 10 / 12%))", "purpose": "Spoczynek pakietu kursu i złotej wstęgi. Filtr, nie box-shadow — clip-path przycina box-shadow." },
+      { "name": "drop-lift", "value": "drop-shadow(0 7px 14px rgb(10 10 10 / 20%))", "purpose": "Hover pakietu (z translateY(-2px)) i hover złotej wstęgi." },
+      { "name": "drop-ciemny", "value": "drop-shadow(0 2px 3px rgb(0 0 0 / 55%))", "purpose": "Ta sama rola w motywie ciemnym." },
+      { "name": "drop-lift-ciemny", "value": "drop-shadow(0 7px 16px rgb(0 0 0 / 65%))", "purpose": "Ta sama rola w motywie ciemnym." },
+      { "name": "shadow", "value": "0 2px 6px rgb(10 10 10 / 14%)", "purpose": "Zadeklarowany box-shadow dla warstwy lekcji (bez ścinania narożników). Powłoka go nie używa." },
+      { "name": "shadow-lift", "value": "0 8px 20px rgb(10 10 10 / 16%)", "purpose": "Uniesiona wersja tego samego, również zarezerwowana dla warstwy lekcji." }
+    ],
+    "motion": [
+      { "name": "step", "value": "180ms ease", "purpose": "Każde przejście stanu: tło, ramka, kolor, filtr, transform." },
+      { "name": "deploy", "value": "0.34s cubic-bezier(0.16, 0.84, 0.28, 1)", "purpose": "Kaskada rozłożenia arkusza: rotateX(-74deg) z perspective(800px) i transform-origin top center do zera." },
+      { "name": "deploy-stagger", "value": "calc(var(--i, 0) * 45ms)", "purpose": "Opóźnienie kolejnej pozycji w kaskadzie; indeks wstrzykiwany jako --i." },
+      { "name": "krok", "value": "1.1s steps(2, jump-none) infinite alternate", "purpose": "Krokowe mruganie znacznika stanu generowana/generowanie." },
+      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }", "purpose": "Wyłącza w powłoce każdy ruch bez wyjątku." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Panel (zagięcie górskie i dolinne)",
+      "kind": "card",
+      "refersTo": "panel-mountain",
+      "description": "Podstawowa rzecz leżąca na arkuszu: ścięty narożnik, podgięty klapek, linia zagięcia. Wariant valley jest lustrem i wynika z nieparzystego indeksu pozycji.",
+      "html": "<div class=\"ds-panel-row\"><section class=\"ds-panel\"><span class=\"ds-panel-code\">M-01</span><p>Zagięcie górskie — ścięcie w prawym górnym rogu.</p></section><section class=\"ds-panel ds-panel--valley\"><span class=\"ds-panel-code\">V-02</span><p>Zagięcie dolinne — lustro tego samego kształtu.</p></section></div>",
+      "css": ".ds-panel-row{display:flex;flex-wrap:wrap;gap:1.1rem}.ds-panel-row>*{flex:1 1 15rem}.ds-panel-row .ds-panel--valley{margin-block-start:1.5rem}.ds-panel{position:relative;padding:1.15rem 1.2rem;font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.92rem;line-height:1.65;color:var(--text,#0a0a0a);background:linear-gradient(var(--border,#ccc8bd),var(--border,#ccc8bd)) top left/100% 1px no-repeat,linear-gradient(var(--border,#ccc8bd),var(--border,#ccc8bd)) bottom left/100% 1px no-repeat,linear-gradient(var(--border,#ccc8bd),var(--border,#ccc8bd)) top left/1px 100% no-repeat,linear-gradient(var(--border,#ccc8bd),var(--border,#ccc8bd)) top right/1px 100% no-repeat,var(--surface,#fbfaf7);clip-path:polygon(0 0,calc(100% - .9rem) 0,100% .9rem,100% 100%,0 100%)}.ds-panel p{margin:0}.ds-panel-code{display:block;margin-bottom:.5rem;font-size:.7rem;letter-spacing:.14em;color:var(--muted,#605d56);font-variant-numeric:tabular-nums}.ds-panel::before{content:'';position:absolute;inset:0 0 auto auto;width:.9rem;height:.9rem;background:var(--surface-2,#e6e3da);clip-path:polygon(0 0,100% 100%,0 100%);pointer-events:none}.ds-panel::after{content:'';position:absolute;inset:0 0 auto auto;width:.9rem;height:.9rem;background:linear-gradient(to bottom left,transparent calc(50% - .5px),var(--border,#ccc8bd) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px));pointer-events:none}.ds-panel--valley{clip-path:polygon(.9rem 0,100% 0,100% 100%,0 100%,0 .9rem)}.ds-panel--valley::before,.ds-panel--valley::after{inset:0 auto auto 0}.ds-panel--valley::before{clip-path:polygon(100% 0,100% 100%,0 100%)}.ds-panel--valley::after{background:linear-gradient(to bottom right,transparent calc(50% - .5px),var(--border,#ccc8bd) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px))}"
+    },
+    {
+      "name": "Pakiet kursu",
+      "kind": "card",
+      "refersTo": "panel-mountain",
+      "description": "Sygnaturowa karta listy projektów: kod pozycji, tytuł tematu, blok spec i cicha akcja usuwania. Podnosi się na hover cieniem filtrowym.",
+      "html": "<article class=\"ds-panel ds-project\"><span class=\"ds-panel-code\">M-01</span><a class=\"ds-project-title\" href=\"#\">Teoria muzyki</a><dl class=\"ds-spec\"><dt>Lekcje</dt><dd>4/12</dd><dt>Język</dt><dd>PL</dd><dt>Stan</dt><dd><span class=\"ds-state\" data-state=\"plan\">plan</span></dd></dl><div class=\"ds-project-actions\"><button class=\"ds-btn ds-btn--quiet\" type=\"button\">Usuń</button></div></article>",
+      "css": ".ds-project{display:flex;flex-direction:column;gap:.7rem;max-width:20rem;filter:drop-shadow(0 2px 3px rgb(10 10 10 / 12%));transition:filter 180ms ease,transform 180ms ease}.ds-project:hover{filter:drop-shadow(0 7px 14px rgb(10 10 10 / 20%));transform:translateY(-2px)}.ds-project-title{font-size:1.02rem;font-weight:600;line-height:1.35;color:var(--text,#0a0a0a);text-decoration:none;overflow-wrap:anywhere}.ds-project-title:hover{color:var(--accent,#24518f)}.ds-project-actions{margin-top:auto;padding-top:.2rem}.ds-btn--quiet{padding-inline:0;border-color:transparent;background:transparent}.ds-btn--quiet:hover{border-color:transparent;background:transparent;color:var(--danger,#a8321e);text-decoration:underline;text-underline-offset:.25em}"
+    },
+    {
+      "name": "Złota wstęga (akcja główna)",
+      "kind": "button",
+      "refersTo": "button-foil",
+      "description": "Jedyna akcja główna ekranu. Szczotkowana folia: gradient 102° z ziarnem feTurbulence, ukośnie ucięta prawa krawędź, pierścień focusu atramentem wewnątrz foli.",
+      "html": "<button class=\"ds-btn-foil\" type=\"button\">Utwórz projekt</button>",
+      "css": ".ds-btn-foil{font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.74rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--on-foil,#0a0a0a);border:0;border-radius:0;padding:.55rem 1.5rem .55rem 1rem;cursor:pointer;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='40'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='40' filter='url(%23f)' opacity='0.3'/%3E%3C/svg%3E\"),linear-gradient(102deg,var(--foil-deep,#a9871f) 0%,var(--foil-lite,#ecd07a) 42%,var(--foil,#d4af37) 78%);filter:drop-shadow(0 2px 3px rgb(10 10 10 / 12%));clip-path:polygon(0 0,100% 0,calc(100% - .75rem) 100%,0 100%);transition:background-color 180ms ease,filter 180ms ease}.ds-btn-foil:hover{background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='40'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='40' filter='url(%23f)' opacity='0.3'/%3E%3C/svg%3E\"),linear-gradient(102deg,var(--foil,#d4af37) 0%,var(--foil-lite,#ecd07a) 55%,var(--foil-lite,#ecd07a) 100%);filter:drop-shadow(0 7px 14px rgb(10 10 10 / 20%))}.ds-btn-foil:focus-visible{outline:2px solid var(--on-foil,#0a0a0a);outline-offset:-5px}.ds-btn-foil:disabled{background:var(--surface-2,#e6e3da);color:var(--muted,#605d56);filter:none;cursor:default}"
+    },
+    {
+      "name": "Przycisk domyślny",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Papier z ramką 1px. Wariant ghost gubi tło, wariant danger pisze czerwienią i zapala ramkę dopiero pod kursorem.",
+      "html": "<div class=\"ds-btn-row\"><button class=\"ds-btn\" type=\"button\">Przelicz plan</button><button class=\"ds-btn ds-btn--ghost\" type=\"button\">Pomiń wywiad</button><button class=\"ds-btn ds-btn--danger\" type=\"button\">Usuń</button></div>",
+      "css": ".ds-btn-row{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}.ds-btn{font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text,#0a0a0a);background:var(--surface,#fbfaf7);border:1px solid var(--border,#ccc8bd);border-radius:0;padding:.5rem .85rem;cursor:pointer;transition:background-color 180ms ease,border-color 180ms ease,color 180ms ease}.ds-btn:hover{border-color:var(--crease-m,#b9b6ae);background:var(--surface-2,#e6e3da)}.ds-btn:focus-visible{outline:2px solid var(--accent,#24518f);outline-offset:2px}.ds-btn:disabled{opacity:.5;cursor:default}.ds-btn--ghost{background:transparent}.ds-btn--danger{color:var(--danger,#a8321e);background:transparent}.ds-btn--danger:hover{border-color:var(--danger,#a8321e);background:transparent}"
+    },
+    {
+      "name": "Pole formularza",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Pole jest wgłębieniem w papierze: tło arkusza, ramka 1px, zero promienia, etykieta nad polem w rejestrze Label.",
+      "html": "<label class=\"ds-field\"><span>Czego chcesz się nauczyć?</span><input class=\"ds-input\" type=\"text\" placeholder=\"np. Teoria muzyki\" /></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:.35rem;max-width:30rem}.ds-field>span{font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#605d56)}.ds-input{font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.9rem;color:var(--text,#0a0a0a);background:var(--bg,#f1efe9);border:1px solid var(--border,#ccc8bd);border-radius:0;padding:.5rem .7rem}.ds-input::placeholder{color:var(--muted,#605d56);opacity:1}.ds-input:focus-visible{outline:2px solid var(--accent,#24518f);outline-offset:1px}"
+    },
+    {
+      "name": "Wiersz opcji wywiadu",
+      "kind": "custom",
+      "refersTo": "option",
+      "description": "Sygnaturowy komponent stanu wybranego: zaznaczenie składa prawy górny narożnik w dolinę i wypełnia go błękitem zagięcia. Focus należy się całemu wierszowi.",
+      "html": "<div class=\"ds-options\"><label class=\"ds-option\"><input type=\"radio\" name=\"ds-q\" /><span>Błąd kompilacji — wartość została przeniesiona</span></label><label class=\"ds-option\"><input type=\"radio\" name=\"ds-q\" checked /><span>Wypisze `hej` — obie zmienne wskazują ten sam bufor</span></label></div>",
+      "css": ".ds-options{display:flex;flex-direction:column;gap:.4rem;max-width:32rem;font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.92rem;line-height:1.65;color:var(--text,#0a0a0a)}.ds-option{position:relative;display:flex;align-items:center;gap:.6rem;padding:.5rem .7rem;background:var(--bg,#f1efe9);border:1px solid var(--border,#ccc8bd);cursor:pointer;transition:background-color 180ms ease}.ds-option:hover{background:var(--surface-2,#e6e3da)}.ds-option input{accent-color:var(--accent,#24518f)}.ds-option:has(:focus-visible){outline:2px solid var(--accent,#24518f);outline-offset:-3px}.ds-option:has(:checked){background:var(--surface,#fbfaf7);border-color:var(--crease-v,#a8c6e8);clip-path:polygon(0 0,calc(100% - .9rem) 0,100% .9rem,100% 100%,0 100%)}.ds-option:has(:checked)::after{content:'';position:absolute;inset:0 0 auto auto;width:.9rem;height:.9rem;background:var(--crease-v,#a8c6e8);clip-path:polygon(0 0,100% 100%,0 100%);pointer-events:none}"
+    },
+    {
+      "name": "Znacznik stanu",
+      "kind": "chip",
+      "refersTo": "state-mark",
+      "description": "Polskie enumy danych zmapowane na stany zagięcia: nacięte (sam obrys), mrugające krokowo, wypełnione, złote, czerwone.",
+      "html": "<div class=\"ds-state-row\"><span class=\"ds-state\" data-state=\"zaplanowana\">zaplanowana</span><span class=\"ds-state\" data-state=\"generowana\">generowana</span><span class=\"ds-state\" data-state=\"gotowa\">gotowa</span><span class=\"ds-state\" data-state=\"ukończona\">ukończona</span><span class=\"ds-state\" data-state=\"błąd\">błąd</span></div>",
+      "css": ".ds-state-row{display:flex;flex-wrap:wrap;gap:1rem}.ds-state{display:inline-flex;align-items:center;gap:.45rem;font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#605d56)}.ds-state::before{content:'';width:.5rem;height:.5rem;transform:skewX(-20deg);background:currentcolor}.ds-state[data-state='zaplanowana']::before,.ds-state[data-state='nowy']::before{background:transparent;box-shadow:inset 0 0 0 1px currentcolor}.ds-state[data-state='generowana'],.ds-state[data-state='generowanie']{color:var(--warn,#96660f)}.ds-state[data-state='generowana']::before,.ds-state[data-state='generowanie']::before{animation:ds-krok 1.1s steps(2,jump-none) infinite alternate}.ds-state[data-state='gotowa'],.ds-state[data-state='gotowy'],.ds-state[data-state='plan'],.ds-state[data-state='wywiad']{color:var(--accent,#24518f)}.ds-state[data-state='ukończona']{color:var(--done,#7a6215)}.ds-state[data-state='błąd']{color:var(--danger,#a8321e)}@keyframes ds-krok{from{opacity:.3}to{opacity:1}}@media (prefers-reduced-motion:reduce){.ds-state::before{animation:none}}"
+    },
+    {
+      "name": "Blok spec",
+      "kind": "custom",
+      "refersTo": "panel-mountain",
+      "description": "Sposób, w jaki ten świat pokazuje metadane: dwukolumnowa lista definicyjna, dt wersalikami w kolorze ołówka, dd z tabelarycznymi cyframi.",
+      "html": "<dl class=\"ds-spec\"><dt>Poziom</dt><dd>średni</dd><dt>Tempo</dt><dd>normalne</dd><dt>Zakres</dt><dd>standardowy</dd></dl>",
+      "css": ".ds-spec{display:grid;grid-template-columns:auto 1fr;gap:.15rem 1rem;margin:0;font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.76rem;color:var(--text,#0a0a0a)}.ds-spec dt{color:var(--muted,#605d56);letter-spacing:.12em;text-transform:uppercase}.ds-spec dd{margin:0;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Linijka arkusza (nagłówek)",
+      "kind": "nav",
+      "refersTo": "header-rule",
+      "description": "Przyklejony pasek: marka Michromą wersalikami i kod bieżącego ekranu po lewej, przełączniki motywu i języka po prawej — ze ścięciem 0.5rem i własnym klapkiem.",
+      "html": "<header class=\"ds-header\"><div class=\"ds-ident\"><a class=\"ds-brand\" href=\"#\">LearnAnything</a><span class=\"ds-code\">M-01</span></div><div class=\"ds-switches\"><button type=\"button\">Ciemny</button><button type=\"button\">EN</button></div></header>",
+      "css": ".ds-header{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.7rem clamp(.8rem,3vw,1.4rem);background:var(--surface,#fbfaf7);border-bottom:1px solid var(--border,#ccc8bd)}.ds-ident{display:flex;align-items:baseline;gap:clamp(.4rem,2vw,.85rem);min-width:0}.ds-brand{font-family:Michroma,'Spline Sans Mono',system-ui,sans-serif;font-size:clamp(.64rem,.45rem + .7vw,.82rem);letter-spacing:clamp(.08em,.02em + .5vw,.2em);text-transform:uppercase;white-space:nowrap;color:var(--text,#0a0a0a);text-decoration:none}.ds-brand:hover{color:var(--foil-deep,#a9871f)}.ds-code{font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.7rem;letter-spacing:.14em;color:var(--muted,#605d56);font-variant-numeric:tabular-nums}.ds-switches{display:flex;gap:.5rem}.ds-switches button{position:relative;font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text,#0a0a0a);background:transparent;border:1px solid var(--border,#ccc8bd);border-radius:0;padding:.5rem .85rem;cursor:pointer;clip-path:polygon(0 0,calc(100% - .5rem) 0,100% .5rem,100% 100%,0 100%);transition:background-color 180ms ease,border-color 180ms ease}.ds-switches button::after{content:'';position:absolute;inset:0 0 auto auto;width:.5rem;height:.5rem;background:var(--surface-2,#e6e3da);clip-path:polygon(0 0,100% 100%,0 100%)}.ds-switches button:hover{border-color:var(--crease-m,#b9b6ae);background:var(--surface-2,#e6e3da)}.ds-switches button:focus-visible{outline:2px solid var(--accent,#24518f);outline-offset:-4px}"
+    },
+    {
+      "name": "Blok błędu",
+      "kind": "custom",
+      "refersTo": "panel-mountain",
+      "description": "Złe zagięcie: ta sama sylwetka co panel, ale wszystkie krawędzie i przekątna w czerwieni. Nagłówek z tłumaczenia, szczegół serwera drobnym drukiem.",
+      "html": "<div class=\"ds-error\" role=\"alert\"><strong>Coś poszło nie tak.</strong><small>fetch failed</small></div>",
+      "css": ".ds-error{position:relative;display:flex;flex-direction:column;gap:.3rem;padding:.85rem 1rem;max-width:34rem;font-family:'Spline Sans Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;background:linear-gradient(var(--danger,#a8321e),var(--danger,#a8321e)) top left/100% 1px no-repeat,linear-gradient(var(--danger,#a8321e),var(--danger,#a8321e)) bottom left/100% 1px no-repeat,linear-gradient(var(--danger,#a8321e),var(--danger,#a8321e)) top left/1px 100% no-repeat,linear-gradient(var(--danger,#a8321e),var(--danger,#a8321e)) top right/1px 100% no-repeat,var(--surface,#fbfaf7);clip-path:polygon(0 0,calc(100% - .9rem) 0,100% .9rem,100% 100%,0 100%)}.ds-error::after{content:'';position:absolute;inset:0 0 auto auto;width:.9rem;height:.9rem;background:linear-gradient(to bottom left,transparent calc(50% - .5px),var(--danger,#a8321e) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px));pointer-events:none}.ds-error strong{color:var(--danger,#a8321e);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase}.ds-error small{color:var(--muted,#605d56);font-size:.74rem}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Rozkładany arkusz",
+    "overview": "Świat wybrany przez użytkownika ze strony decyzyjnej: rozkładany arkusz Miury (katalog paper-folds-pleats-deployable-miura-orbit-sheet, seed key b2ffe36d, tryb operate). Kontrakt kierunku zapisany w public/index.html stawia tezę wprost: „Kurs jest arkuszem Miury — jedno pociągnięcie rozkłada pakiet w pole ponumerowanych paneli. Odrzuca siatkę jednakowych, zaokrąglonych kafelków z akcentem.\" Cała reszta systemu jest konsekwencją tego zdania, a nie zbiorem osobnych upodobań.\n\nMateriałem jest papier, nie szkło i nie płaskie tło. Korpus strony niesie ziarno (--paper-grain, inline feTurbulence) i dwie rodziny włosowych zagięć pod 60° i −60°, powtarzanych co 5,5rem — arkusz jest widoczny, zanim cokolwiek na nim położysz. Rzeczy leżące na arkuszu mają jeden ścięty narożnik i podgięty klapek: to jedyna sylwetka w systemie. Zagięcia idą na przemian, górskie i dolinne, a ta sama parzystość rządzi trzema rzeczami naraz — kodem pozycji (M-01, V-02), stroną ścięcia i pionowym przesunięciem w siatce. Kod przy każdej pozycji nie jest ozdobą techniczną; jest etykietą miejsca w złożeniu.\n\nGłos jest arkuszem specyfikacji, nie broszurą. Michroma wersalikami mówi tylko tam, gdzie mówi aplikacja (marka, tytuł ekranu); wszystko poza tym — łącznie z tekstem czytanym — idzie Spline Sans Mono. Złoto jest materiałem, nie kolorem: występuje jako szczotkowana folia na dokładnie jednej akcji ekranu i nigdy nie zostaje kolorem tekstu na papierze. Jeden ruch w całej powłoce ma prawo być zauważony: kaskada rozłożenia arkusza przy wejściu na ekran. Świat odrzuca zaokrąglone kafelki, dekoracyjny gradient tła i drugi akcent kolorystyczny obok folii.",
+    "keyCharacteristics": [
+      "Papier w polu włosowych zagięć 60°, nigdy gładkie tło",
+      "Zero promienia narożnika w całym systemie — narożnik jest ścinany, nie zaokrąglany",
+      "Parzystość pozycji rządzi kodem M-/V-, stroną ścięcia i przesunięciem w siatce",
+      "Michroma wersalikami tylko dla głosu aplikacji, Spline Sans Mono dla całej reszty",
+      "Złota folia jako materiał jednej akcji na ekran",
+      "Dwa równorzędne motywy, data-theme=\"jasny|ciemny\", kolory wyłącznie z theme.css",
+      "Jeden autorski ruch: kaskada rozłożenia, 340 ms, 45 ms opóźnienia na pozycję",
+      "Zero media query widokowych — cały zakres niesie clamp(), auto-fill i flex-wrap"
+    ],
+    "reserve": [
+      "rysunek wzoru zagięć (crease pattern) jako element ilustracyjny",
+      "litera M/V wybita wewnątrz podgiętego klapka",
+      "adnotacja kąta 60° jako ornament",
+      "rysowany zestaw ikon w jednej grubości kreski",
+      "stan aktywny, w którym ogon złotej wstęgi wbiega w atrament",
+      "włosowe przekątne zagięć przecinające liternictwo Michromy"
+    ],
+    "rules": [
+      { "name": "Reguła jednego źródła koloru", "body": "Żaden plik poza theme.css nie zapisuje wartości koloru. Jedyny udokumentowany wyjątek to data-URI favikony w index.html. Nowa powierzchnia dodaje zmienną do obu motywów albo używa istniejącej — nigdy nie wpisuje heksa na miejscu.", "section": "colors" },
+      { "name": "Reguła folii jako materiału", "body": "Złoto jest powierzchnią, nigdy atramentem. Wolno nim wypełnić dokładnie jedną akcję na ekranie; jeśli ekran potrzebuje dwóch podświetlonych akcji, to znaczy, że jedna z nich nie jest główna. Tam, gdzie ma paść tekst o wydźwięku złota (stan ukończona), używa się --done, a nie --foil.", "section": "colors" },
+      { "name": "Reguła podłogi kontrastu", "body": "Ziarno papieru obniża efektywne tło, więc kontrast mierzy się na ziarnie, nie na czystym heksie. --muted został z tego powodu przyciemniony: wcześniejsza wartość dawała 4,36:1, obecna mierzy 5,06:1 na ziarnistym arkuszu i 6,29:1 wewnątrz paneli. Placeholder pól używa tej samej zmiennej z opacity: 1, bo domyślny placeholder przeglądarki schodził do ~3,5:1.", "section": "colors" },
+      { "name": "Reguła cudzego tematu", "body": "Tytuł, który należy do aplikacji, idzie Michromą wersalikami. Tytuł niosący temat wpisany przez użytkownika opuszcza krój display i zostaje monospaced, w normalnej wielkości liter (h1.subject). Powód jest zmierzony na buildzie: długi temat w szerokich wersalikach schodził na trzy linie i przestawał być tytułem.", "section": "typography" },
+      { "name": "Reguła dwóch rejestrów", "body": "Wersaliki ze światłem to metadane (etykieta, stan, kod, przycisk). Normalna wielkość liter to treść (tytuł kursu, pytanie, akapit, pole). Nowy element wybiera rejestr według tego, czym jest, a nie według tego, jak ma być ważny.", "section": "typography" },
+      { "name": "Reguła zadeklarowanego zakresu znaków", "body": "Kroje są wpięte z jawnym unicode-range dla latin i latin-ext; polskie znaki diakrytyczne padają w drugi plik. Znak spoza zadeklarowanego zakresu (np. strzałka U+2190) nie ma prawa być tekstem — grot w linku powrotnym jest rysowany dwiema krawędziami obróconymi o 45°.", "section": "typography" },
+      { "name": "Reguła braku punktów granicznych", "body": "W całej powłoce nie ma ani jednej widokowej media query — jedyna w pliku to prefers-reduced-motion. Skalowanie niesie clamp(), zawijanie niesie auto-fill minmax() i flex-wrap. Nowy układ, który potrzebuje @media (max-width: …), jest sygnałem, że jego wewnętrzna miara jest źle dobrana.", "section": "layout" },
+      { "name": "Reguła kadencji arkusza", "body": "Panele w siatce nie stoją w równej linii: dolinne siadają 1.5rem niżej niż górskie. Wyrównanie ich do jednego rzędu likwiduje złożenie i sprowadza świat do zwykłych kafelków.", "section": "layout" },
+      { "name": "Reguła cienia za kształtem", "body": "Element ze ściętym narożnikiem cieniuje się przez filter: drop-shadow(). box-shadow na clip-path jest w tym świecie zawsze błędem — zostanie obcięty dokładnie tam, gdzie cień był potrzebny.", "section": "elevation" },
+      { "name": "Reguła płaskiego arkusza", "body": "Panel leżący na arkuszu jest płaski: ramka 1px i klapek wystarczą. Cień dostaje tylko rzecz, którą można podnieść — pakiet kursu i akcja główna.", "section": "elevation" },
+      { "name": "Reguła zera promienia", "body": "Nigdzie w systemie nie pada border-radius inny niż 0. Zaokrąglony narożnik jest w tym świecie obcym materiałem.", "section": "shapes" },
+      { "name": "Reguła lustra parzystości", "body": "Pozycja parzysta jest górska (ścięcie w prawym górnym rogu, kod M-), nieparzysta jest dolinna (ścięcie w lewym górnym, kod V-). Kod, strona ścięcia i przesunięcie w siatce zawsze pochodzą z tego samego indeksu — rozjazd któregokolwiek z nich rozspójnia arkusz.", "section": "shapes" },
+      { "name": "Reguła pierścienia do środka", "body": "clip-path obcina outline, więc pierścień focusu wchodzi do wnętrza elementu (ujemny outline-offset: -4px na przełącznikach, -5px na foli, -3px na wierszu opcji). Focus nigdy nie jest usuwany, tylko przenoszony do środka.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do trzymać każdą wartość koloru w theme.css, w obu motywach naraz; jedyny wyjątek to data-URI favikony.",
+      "Do dawać nowej rzeczy leżącej na arkuszu ścięty narożnik --cut z klapkiem i linią zagięcia — i wybierać stronę ścięcia z parzystości pozycji, tej samej, która generuje kod M-/V-.",
+      "Do cieniować przez filter: drop-shadow() (--drop, --drop-lift), bo clip-path przycina box-shadow.",
+      "Do pisać interakcję i focus kolorem --accent, a stan ukończona kolorem --done.",
+      "Do wpuszczać focus do środka ujemnym outline-offset tam, gdzie clip-path obcina pierścień.",
+      "Do skalować przez clamp(), auto-fill minmax() i flex-wrap zamiast punktów granicznych.",
+      "Do mierzyć kontrast tekstu na ziarnistym tle, nie na czystym heksie — ziarno obniża efektywną jasność arkusza.",
+      "Do zostawiać h1.subject dla tytułów niosących tekst użytkownika."
+    ],
+    "donts": [
+      "Don't używać border-radius innego niż 0.",
+      "Don't malować złotem tekstu na papierze ani dawać więcej niż jedną złotą wstęgę na ekran.",
+      "Don't wprowadzać drugiego koloru akcentowego obok folii i --accent; błękit --crease-v należy wyłącznie do doliny.",
+      "Don't dodawać widokowych media query — jedyna dopuszczona to prefers-reduced-motion.",
+      "Don't dokładać drugiej animacji wejścia; kaskada rozłożenia jest jedynym autorskim ruchem powłoki.",
+      "Don't stawiać border na elemencie z clip-path — krawędzie rysuje się gradientami tła, przekątną pseudo-elementem.",
+      "Don't wyrównywać paneli siatki do jednego rzędu; przesunięcie zagięć dolinnych o 1.5rem jest częścią świata.",
+      "Don't wstawiać glifów jako ikon (grot powrotu jest rysowany krawędziami — znak spoza zadeklarowanego unicode-range i tak by nie padł).",
+      "Don't wygładzać tła do jednolitej płaszczyzny; ziarno i włosowe zagięcia 60° są materiałem, nie ozdobą."
+    ]
+  }
+}

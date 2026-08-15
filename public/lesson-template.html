@@ -1,0 +1,26 @@
+<!doctype html>
+<!--
+  Szablon lekcji. Generator (faza 06) podstawia {{…}} i dopisuje lesson.css + lesson.js.
+  Kolejność sekcji jest niezmienna: teoria → praktyka → sprawdzian → sugestie.
+  data-project/data-lesson mówią runtime'owi, dokąd wysłać wynik i pod jakim kluczem trzymać
+  stan (faza 08). data-lang to język lekcji — nie ustawienie powłoki.
+-->
+<html lang="{{language}}" data-theme="jasny">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/theme.css" />
+    <link rel="stylesheet" href="/print.css" media="print" />
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body data-project="{{projectId}}" data-lesson="{{lessonId}}" data-lang="{{language}}">
+    <header class="lekcja-naglowek"><h1>{{title}}</h1></header>
+    <section id="teoria"><!-- .pojecie × N --></section>
+    <section id="praktyka"><!-- .cwiczenie × 2–5 --></section>
+    <section id="sprawdzian" class="sprawdzian"></section>
+    <section id="sugestie" class="sugestie"></section>
+    <script type="module" src="/runtime.js"></script>
+    <script type="module" src="lesson.js"></script>
+  </body>
+</html>

@@ -1,0 +1,736 @@
+/* Styl powłoki. Świat: rozkładany arkusz Miury.
+   Wszystkie kolory ze zmiennych z theme.css. Lekcja ma własny szablon — tu nic o niej nie wie.
+
+   Trzy reguły, z których wynika reszta:
+   1. Papier ma pole zagięć — tło niesie włosową siatkę 60°, nie jest gładkie.
+   2. Rzeczy mają ścięty narożnik i podgięty klapek; nic nie jest zaokrąglone.
+   3. Złoto to materiał jednej akcji na ekran, nigdy kolor tekstu na papierze. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    var(--paper-grain),
+    repeating-linear-gradient(
+      60deg,
+      transparent 0 5.5rem,
+      var(--crease-hair) 5.5rem calc(5.5rem + 1px)
+    ),
+    repeating-linear-gradient(
+      -60deg,
+      transparent 0 5.5rem,
+      var(--crease-hair-2) 5.5rem calc(5.5rem + 1px)
+    );
+  background-attachment: fixed;
+}
+
+/* --- linijka arkusza (nagłówek) -------------------------------------------- */
+
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem clamp(0.8rem, 3vw, 1.4rem);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(0.64rem, 0.45rem + 0.7vw, 0.82rem);
+  letter-spacing: clamp(0.08em, 0.02em + 0.5vw, 0.2em);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--foil-deep);
+}
+
+.switches {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.switches button {
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0 100%);
+}
+
+/* Klapek, nie linia: przekątna rysowana dokładnie na cięciu clip-path znikała co do piksela. */
+.switches button::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--surface-2);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+
+/* clip-path ucina pierścień focusu, więc wchodzi on do środka */
+.switches button:focus-visible {
+  outline-offset: -4px;
+}
+
+#screen {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 2rem clamp(0.9rem, 3vw, 1.4rem) 5rem;
+}
+
+/* --- typografia ------------------------------------------------------------ */
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 1rem + 1.4vw, 2rem);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  margin: 0.4rem 0 1.4rem;
+}
+
+/* Kreska zagięcia zamiast podkreślenia: nacięcie prowadzące wzrok w prawo. */
+h1::after {
+  content: '';
+  display: block;
+  height: 1px;
+  margin-top: 0.9rem;
+  background: linear-gradient(90deg, var(--crease-m) 0 22%, var(--border) 22% 60%, transparent 60%);
+}
+
+/* Tytuł ekranu jest nasz i idzie wersalikami; temat kursu jest cudzy i zostaje sobą. */
+h1.subject {
+  font-family: var(--font);
+  font-size: clamp(1.1rem, 0.95rem + 0.8vw, 1.45rem);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.4;
+}
+
+h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 2rem 0 0.8rem;
+}
+
+h2:first-child {
+  margin-top: 0;
+}
+
+p {
+  margin: 0 0 0.75rem;
+  max-width: 64ch;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.code {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--step) ease;
+}
+
+/* Grot rysowany, nie glif: U+2190 nie mieści się w zadeklarowanym unicode-range. */
+.back::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-left: 1px solid currentcolor;
+  border-bottom: 1px solid currentcolor;
+  transform: rotate(45deg);
+}
+
+.back:hover {
+  color: var(--text);
+}
+
+/* --- panel: rzecz leżąca na arkuszu ---------------------------------------- */
+
+.panel {
+  position: relative;
+  padding: 1.15rem 1.2rem;
+  margin-bottom: 1.25rem;
+  background:
+    linear-gradient(var(--border), var(--border)) top left / 100% 1px no-repeat,
+    linear-gradient(var(--border), var(--border)) bottom left / 100% 1px no-repeat,
+    linear-gradient(var(--border), var(--border)) top left / 1px 100% no-repeat,
+    linear-gradient(var(--border), var(--border)) top right / 1px 100% no-repeat,
+    var(--surface);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+/* podgięty klapek narożnika */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: var(--cut);
+  height: var(--cut);
+  background: var(--surface-2);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+
+/* linia zagięcia na klapku */
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: var(--cut);
+  height: var(--cut);
+  background: linear-gradient(
+    to bottom left,
+    transparent calc(50% - 0.5px),
+    var(--border) calc(50% - 0.5px) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+  pointer-events: none;
+}
+
+/* Zagięcie dolinne jest lustrem górskiego — ścięcie i klapek przechodzą na lewą stronę. */
+.panel.valley {
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut));
+}
+
+.panel.valley::before,
+.panel.valley::after {
+  inset: 0 auto auto 0;
+}
+
+.panel.valley::before {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.panel.valley::after {
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.5px),
+    var(--border) calc(50% - 0.5px) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
+.panel.narrow {
+  max-width: 34rem;
+}
+
+/* --- blok specyfikacji ------------------------------------------------------ */
+
+.spec {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.76rem;
+}
+
+.spec dt {
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.spec dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- stan jako zagięcie ----------------------------------------------------- */
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.state::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  transform: skewX(-20deg);
+  background: currentcolor;
+}
+
+/* zaplanowana: zagięcie nacięte, jeszcze nierozłożone */
+.state[data-state='zaplanowana']::before,
+.state[data-state='nowy']::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px currentcolor;
+}
+
+.state[data-state='generowana'],
+.state[data-state='generowanie'] {
+  color: var(--warn);
+}
+
+.state[data-state='generowana']::before,
+.state[data-state='generowanie']::before {
+  animation: krok 1.1s steps(2, jump-none) infinite alternate;
+}
+
+.state[data-state='gotowa'],
+.state[data-state='gotowy'],
+.state[data-state='plan'],
+.state[data-state='wywiad'] {
+  color: var(--accent);
+}
+
+.state[data-state='ukończona'] {
+  color: var(--done);
+}
+
+.state[data-state='błąd'] {
+  color: var(--danger);
+}
+
+@keyframes krok {
+  from {
+    opacity: 0.3;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- pakiety kursów --------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18.5rem, 1fr));
+  gap: 1.1rem;
+}
+
+.project {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin: 0;
+  filter: var(--drop);
+  transition:
+    filter var(--step) ease,
+    transform var(--step) ease;
+}
+
+/* 2. Arkusz zostaje rozłożony także po animacji: zagięcia dolinne siadają niżej niż górskie. */
+.grid .project:nth-child(even) {
+  margin-block-start: 1.5rem;
+}
+
+.project:hover {
+  filter: var(--drop-lift);
+  transform: translateY(-2px);
+}
+
+.project .title {
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.project .title:hover {
+  color: var(--accent);
+}
+
+.project .spec {
+  margin: 0;
+}
+
+.project .actions {
+  margin-top: auto;
+  padding-top: 0.2rem;
+}
+
+.project .actions button {
+  padding-inline: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.project .actions button:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--danger);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.ident {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.4rem, 2vw, 0.85rem);
+  min-width: 0;
+}
+
+/* --- sterowanie ------------------------------------------------------------- */
+
+button {
+  font: inherit;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  transition:
+    background-color var(--step) ease,
+    border-color var(--step) ease,
+    color var(--step) ease;
+}
+
+button:hover {
+  border-color: var(--crease-m);
+  background: var(--surface-2);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* złota folia: jedna na ekran */
+button.primary {
+  color: var(--on-foil);
+  font-weight: 600;
+  border: 0;
+  padding: 0.55rem 1.5rem 0.55rem 1rem;
+  background:
+    var(--foil-grain),
+    linear-gradient(102deg, var(--foil-deep) 0%, var(--foil-lite) 42%, var(--foil) 78%);
+  filter: var(--drop);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 0.75rem) 100%, 0 100%);
+}
+
+button.primary:hover {
+  background:
+    var(--foil-grain),
+    linear-gradient(102deg, var(--foil) 0%, var(--foil-lite) 55%, var(--foil-lite) 100%);
+  filter: var(--drop-lift);
+}
+
+/* clip-path ucina outline, więc pierścień focusu wchodzi do środka — atrament na złocie */
+button.primary:focus-visible {
+  outline: 2px solid var(--on-foil);
+  outline-offset: -5px;
+}
+
+button.primary:disabled {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+button.ghost {
+  background: transparent;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+button.danger:hover {
+  border-color: var(--danger);
+  background: transparent;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.actions .comment {
+  flex: 1 1 14rem;
+}
+
+/* --- formularze ------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.field > span {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.65;
+}
+
+/* Domyślny placeholder przeglądarki ma ~3.5:1 na tle pola — za mało, żeby go przeczytać. */
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* --- wywiad ----------------------------------------------------------------- */
+
+.question {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.45;
+  max-width: 56ch;
+  margin: 0.6rem 0 1.1rem;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background-color var(--step) ease;
+}
+
+.option:hover {
+  background: var(--surface-2);
+}
+
+/* Klikalny jest cały wiersz, więc pierścień focusu należy się wierszowi, nie samemu radiu. */
+.option:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+/* wybrana opcja: narożnik złożony w dolinę, wypełniony błękitem zagięcia */
+.option:has(:checked) {
+  background: var(--surface);
+  border-color: var(--crease-v);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+.option:has(:checked)::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: var(--cut);
+  height: var(--cut);
+  background: var(--crease-v);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+
+.option input {
+  accent-color: var(--accent);
+}
+
+/* --- plan i lista lekcji ---------------------------------------------------- */
+
+.plan,
+.lessons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+
+.plan-row,
+.lessons li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.num {
+  min-width: 3.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-row .title {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.plan-row .brief {
+  flex: 2 1 20rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.lessons .title {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+/* Tytuł lekcji w planie jest polem, ale ma wyglądać jak wpisany na arkuszu:
+   ramka pojawia się dopiero pod kursorem albo przy focusie. */
+.plan-row input.title {
+  background: transparent;
+  border-color: transparent;
+  padding: 0.3rem 0.4rem;
+}
+
+.plan-row input.title:hover {
+  border-color: var(--border);
+}
+
+.plan-row input.title:focus-visible {
+  background: var(--bg);
+  border-color: var(--accent);
+}
+
+/* --- błąd: złe zagięcie ------------------------------------------------------ */
+
+.error {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.2rem;
+  background:
+    linear-gradient(var(--danger), var(--danger)) top left / 100% 1px no-repeat,
+    linear-gradient(var(--danger), var(--danger)) bottom left / 100% 1px no-repeat,
+    linear-gradient(var(--danger), var(--danger)) top left / 1px 100% no-repeat,
+    linear-gradient(var(--danger), var(--danger)) top right / 1px 100% no-repeat,
+    var(--surface);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+/* przekątna cięcia dopina ramkę, której clip-path nie domyka */
+.error::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: var(--cut);
+  height: var(--cut);
+  background: linear-gradient(
+    to bottom left,
+    transparent calc(50% - 0.5px),
+    var(--danger) calc(50% - 0.5px) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+  pointer-events: none;
+}
+
+.error strong {
+  color: var(--danger);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.error small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+/* --- jedno pociągnięcie: arkusz się rozkłada -------------------------------- */
+
+@keyframes rozlozenie {
+  from {
+    opacity: 0;
+    transform: perspective(800px) rotateX(-74deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.deploy {
+  transform-origin: top center;
+  animation: rozlozenie 0.34s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,18 @@
+/* Dodatki tej lekcji. System wyglądu siedzi w /theme.css — lekcja go nie powtarza.
+   Kolory wykresu idą wyłącznie ze zmiennych --wiz-*, inaczej fale znikną w ciemnym motywie. */
+
+.fala {
+  fill: none;
+  stroke-width: 2;
+}
+
+.os {
+  stroke: var(--wiz-siatka);
+  stroke-width: 1;
+}
+
+.opis {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  fill: var(--wiz-5);
+}

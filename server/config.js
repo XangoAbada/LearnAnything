@@ -1,0 +1,8 @@
+import path from 'node:path';
+
+export const config = {
+  port: Number(process.env.PORT) || 3000,
+  dataDir: path.resolve(process.env.DATA_DIR || './data'),
+};
+
+export const projectsDir = path.join(config.dataDir, 'projects');

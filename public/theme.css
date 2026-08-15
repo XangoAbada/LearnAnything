@@ -1,0 +1,621 @@
+/* Zmienne motywu — wspólne dla powłoki (app.css) i lekcji (faza 05).
+   Kolory wyłącznie stąd: żaden inny plik nie zapisuje wartości koloru na sztywno.
+   Atrybut ustawia app.js: <html data-theme="jasny|ciemny">.
+   Świat: rozkładany arkusz Miury — papier, zagięcia górskie i dolinne, złota folia. */
+
+@font-face {
+  font-family: 'Michroma';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/michroma-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F,
+    U+2192, U+2197, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Michroma';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/michroma-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F,
+    U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('fonts/spline-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F,
+    U+2192, U+2197, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('fonts/spline-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F,
+    U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root,
+:root[data-theme='jasny'] {
+  color-scheme: light;
+
+  /* arkusz */
+  --bg: #f1efe9;
+  --surface: #fbfaf7;
+  --surface-2: #e6e3da;
+  --text: #0a0a0a;
+  --muted: #605d56;
+  --border: #ccc8bd;
+
+  /* zagięcia: górskie (szare) i dolinne (błękitne) */
+  --crease-m: #b9b6ae;
+  --crease-v: #a8c6e8;
+  --crease-hair: rgb(120 116 106 / 16%);
+  --crease-hair-2: rgb(80 110 150 / 10%);
+
+  /* folia: materiał akcji głównej, nigdy tekst na papierze */
+  --foil: #d4af37;
+  --foil-lite: #ecd07a;
+  --foil-deep: #a9871f;
+  --on-foil: #0a0a0a;
+
+  /* stany */
+  --accent: #24518f;
+  --accent-text: #fbfaf7;
+  --ok: #2f6f4f;
+  --warn: #96660f;
+  --danger: #a8321e;
+  --done: #7a6215;
+
+  /* Wizualizacje w lekcjach: SVG i Canvas biorą kolory wyłącznie stąd — wpisany na sztywno
+     wykres ginie w drugim motywie. Pięć serii wziętych z palety papieru, bez nowych barw. */
+  --wiz-1: #24518f;
+  --wiz-2: #a9871f;
+  --wiz-3: #2f6f4f;
+  --wiz-4: #a8321e;
+  --wiz-5: #605d56;
+  --wiz-siatka: #ccc8bd;
+  --wiz-podswietlenie: rgb(168 198 232 / 45%);
+
+  --shadow: 0 2px 6px rgb(10 10 10 / 14%);
+  --shadow-lift: 0 8px 20px rgb(10 10 10 / 16%);
+
+  /* Cień elementu ze ściętym rogiem: filtr idzie za kształtem, box-shadow zostaje przycięty. */
+  --drop: drop-shadow(0 2px 3px rgb(10 10 10 / 12%));
+  --drop-lift: drop-shadow(0 7px 14px rgb(10 10 10 / 20%));
+
+  /* Materiał: ziarno arkusza i szczotkowany połysk folii. */
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)' opacity='0.5'/%3E%3C/svg%3E");
+  --foil-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='40'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='40' filter='url(%23f)' opacity='0.3'/%3E%3C/svg%3E");
+}
+
+:root[data-theme='ciemny'] {
+  color-scheme: dark;
+
+  --bg: #101012;
+  --surface: #191919;
+  --surface-2: #232326;
+  --text: #f0eee9;
+  --muted: #a09c93;
+  --border: #35353a;
+
+  --crease-m: #55555d;
+  --crease-v: #3f6084;
+  --crease-hair: rgb(255 255 255 / 7%);
+  --crease-hair-2: rgb(150 190 240 / 6%);
+
+  --foil: #d4af37;
+  --foil-lite: #f0d786;
+  --foil-deep: #8f7018;
+  --on-foil: #101012;
+
+  --accent: #9dc0f0;
+  --accent-text: #101012;
+  --ok: #74c096;
+  --warn: #dda63f;
+  --danger: #ef8a76;
+  --done: #e8c766;
+
+  --wiz-1: #9dc0f0;
+  --wiz-2: #e8c766;
+  --wiz-3: #74c096;
+  --wiz-4: #ef8a76;
+  --wiz-5: #a09c93;
+  --wiz-siatka: #35353a;
+  --wiz-podswietlenie: rgb(63 96 132 / 45%);
+
+  --shadow: 0 2px 8px rgb(0 0 0 / 55%);
+  --shadow-lift: 0 10px 26px rgb(0 0 0 / 62%);
+  --drop: drop-shadow(0 2px 3px rgb(0 0 0 / 55%));
+  --drop-lift: drop-shadow(0 7px 16px rgb(0 0 0 / 65%));
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)' opacity='0.28'/%3E%3C/svg%3E");
+  --foil-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='40'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='40' filter='url(%23f)' opacity='0.3'/%3E%3C/svg%3E");
+}
+
+:root {
+  --radius: 0; /* ten świat tnie rogi, nie zaokrągla ich */
+  --cut: 0.9rem; /* wielkość ścięcia narożnika */
+  --gap: 1rem;
+  --font: 'Spline Sans Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  --font-display: 'Michroma', 'Spline Sans Mono', system-ui, sans-serif;
+  --font-mono: 'Spline Sans Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  --measure: 66rem;
+  --step: 180ms; /* jeden krok rozłożenia */
+}
+
+/* --- warstwa lekcji ---------------------------------------------------------
+   Lekcja nie ładuje app.css, więc bazę typografii niesie ten plik. Wszystkie reguły
+   są zawężone do body[data-lesson], żeby nie wyciekły do powłoki — theme.css ładują obie.
+   Nazwy klas są kontraktem promptu lekcji (faza 06): ustalone raz i niezmienne. */
+
+body[data-lesson] {
+  box-sizing: border-box;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 2rem clamp(0.9rem, 3vw, 1.4rem) 5rem;
+  font-family: var(--font);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    var(--paper-grain),
+    repeating-linear-gradient(
+      60deg,
+      transparent 0 5.5rem,
+      var(--crease-hair) 5.5rem calc(5.5rem + 1px)
+    ),
+    repeating-linear-gradient(
+      -60deg,
+      transparent 0 5.5rem,
+      var(--crease-hair-2) 5.5rem calc(5.5rem + 1px)
+    );
+  background-attachment: fixed;
+
+  & * {
+    box-sizing: border-box;
+  }
+
+  & p,
+  & li {
+    max-width: 64ch;
+  }
+
+  & p {
+    margin: 0 0 0.75rem;
+  }
+
+  & ul,
+  & ol {
+    padding-left: 1.2rem;
+  }
+
+  /* Tytuł lekcji niesie temat użytkownika — zostaje monospaced (reguła cudzego tematu). */
+  & h1 {
+    font-size: clamp(1.1rem, 0.95rem + 0.8vw, 1.45rem);
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 1.4rem;
+    overflow-wrap: anywhere;
+  }
+
+  & h1::after {
+    content: '';
+    display: block;
+    height: 1px;
+    margin-top: 0.9rem;
+    background: linear-gradient(90deg, var(--crease-m) 0 22%, var(--border) 22% 60%, transparent 60%);
+  }
+
+  /* h2 to etykieta sekcji, h3 tytuł rzeczy leżącej na arkuszu (reguła dwóch rejestrów) */
+  & h2 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 2rem 0 0.8rem;
+  }
+
+  /* Etykieta wewnątrz panelu nie odsuwa się od jego górnej krawędzi. */
+  & :is(.sprawdzian, .sugestie) > h2:first-child {
+    margin-top: 0;
+  }
+
+  & h3 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0 0 0.6rem;
+  }
+
+  /* tło kodu to druga strona kartki — osobna zmienna nie miałaby innej wartości */
+  & code,
+  & kbd {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--surface-2);
+    padding: 0.1rem 0.3rem;
+  }
+
+  & pre {
+    overflow-x: auto;
+    padding: 0.8rem 0.9rem;
+    background: var(--surface-2);
+  }
+
+  & pre code {
+    background: none;
+    padding: 0;
+  }
+
+  /* --- sterowanie ----------------------------------------------------------- */
+
+  & button {
+    font: inherit;
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    transition:
+      background-color var(--step) ease,
+      border-color var(--step) ease,
+      color var(--step) ease;
+  }
+
+  & button:hover {
+    border-color: var(--crease-m);
+    background: var(--surface-2);
+  }
+
+  & button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  & button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* złota folia: w lekcji jedna akcja — oddanie sprawdzianu */
+  & button.primary {
+    color: var(--on-foil);
+    font-weight: 600;
+    border: 0;
+    padding: 0.55rem 1.5rem 0.55rem 1rem;
+    background:
+      var(--foil-grain),
+      linear-gradient(102deg, var(--foil-deep) 0%, var(--foil-lite) 42%, var(--foil) 78%);
+    filter: var(--drop);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 0.75rem) 100%, 0 100%);
+  }
+
+  & button.primary:hover {
+    background:
+      var(--foil-grain),
+      linear-gradient(102deg, var(--foil) 0%, var(--foil-lite) 55%, var(--foil-lite) 100%);
+    filter: var(--drop-lift);
+  }
+
+  & button.primary:focus-visible {
+    outline: 2px solid var(--on-foil);
+    outline-offset: -5px;
+  }
+
+  & button.primary:disabled {
+    background: var(--surface-2);
+    color: var(--muted);
+    filter: none;
+  }
+
+  /* --- rzeczy leżące na arkuszu --------------------------------------------- */
+
+  & :is(.pojecie, .cwiczenie, .demko, .sprawdzian, .sugestie) {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 1.15rem 1.2rem;
+    background:
+      linear-gradient(var(--border), var(--border)) top left / 100% 1px no-repeat,
+      linear-gradient(var(--border), var(--border)) bottom left / 100% 1px no-repeat,
+      linear-gradient(var(--border), var(--border)) top left / 1px 100% no-repeat,
+      linear-gradient(var(--border), var(--border)) top right / 1px 100% no-repeat,
+      var(--surface);
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+  }
+
+  /* podgięty klapek */
+  & :is(.pojecie, .cwiczenie, .demko, .sprawdzian, .sugestie)::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto auto;
+    width: var(--cut);
+    height: var(--cut);
+    background: var(--surface-2);
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    pointer-events: none;
+  }
+
+  /* linia zagięcia na klapku */
+  & :is(.pojecie, .cwiczenie, .demko, .sprawdzian, .sugestie)::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto auto;
+    width: var(--cut);
+    height: var(--cut);
+    background: linear-gradient(
+      to bottom left,
+      transparent calc(50% - 0.5px),
+      var(--border) calc(50% - 0.5px) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+    pointer-events: none;
+  }
+
+  /* Reguła lustra parzystości: co druga sekcja jest zagięciem dolinnym. */
+  & :is(.pojecie, .cwiczenie):nth-of-type(even) {
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut));
+  }
+
+  & :is(.pojecie, .cwiczenie):nth-of-type(even)::before,
+  & :is(.pojecie, .cwiczenie):nth-of-type(even)::after {
+    inset: 0 auto auto 0;
+  }
+
+  & :is(.pojecie, .cwiczenie):nth-of-type(even)::before {
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  }
+
+  & :is(.pojecie, .cwiczenie):nth-of-type(even)::after {
+    background: linear-gradient(
+      to bottom right,
+      transparent calc(50% - 0.5px),
+      var(--border) calc(50% - 0.5px) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+  }
+
+  /* Kod pozycji jest etykietą miejsca w złożeniu — ta sama parzystość co strona ścięcia. */
+  & #teoria {
+    counter-reset: pojecie;
+  }
+
+  & .pojecie {
+    counter-increment: pojecie;
+  }
+
+  & .pojecie > h3::before {
+    content: 'M-' counter(pojecie, decimal-leading-zero);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 0.25rem;
+  }
+
+  & .pojecie:nth-of-type(even) > h3::before {
+    content: 'V-' counter(pojecie, decimal-leading-zero);
+  }
+
+  /* --- mikro-pytanie i rzeczy chowane --------------------------------------- */
+
+  & .mikro-pytanie {
+    margin: 1rem 0 0;
+    padding: 0.7rem 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  & .mikro-pytanie > p:first-child {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.45;
+    max-width: 56ch;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Odpowiedź wychodzi zza zagięcia: kreska doliny po lewej. */
+  & [data-chowane] {
+    margin-top: 0.7rem;
+    padding-left: 0.8rem;
+    border-left: 1px solid var(--crease-v);
+  }
+
+  & [data-chowane][hidden] {
+    display: none;
+  }
+
+  /* --- diagram i demko ------------------------------------------------------ */
+
+  & .diagram {
+    margin: 1rem 0;
+    padding: 0.9rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  & .diagram :is(svg, canvas) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  & .diagram figcaption {
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* panel sterowania demka — mechanika dochodzi w fazie 07 */
+  & .demko .sterowanie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+  }
+
+  /* --- sprawdzian ----------------------------------------------------------- */
+
+  & .pytanie {
+    margin: 0 0 1.3rem;
+  }
+
+  & .pytanie > .tresc {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.45;
+    max-width: 56ch;
+    margin-bottom: 0.6rem;
+  }
+
+  & .opcje {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  /* Klikalny jest cały wiersz, więc pierścień focusu należy się wierszowi, nie kropce. */
+  & .opcja {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color var(--step) ease;
+  }
+
+  & .opcja:hover {
+    background: var(--surface-2);
+  }
+
+  & .opcja:has(:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: -3px;
+  }
+
+  /* wybrana opcja: narożnik złożony w dolinę */
+  & .opcja:has(:checked) {
+    background: var(--surface);
+    border-color: var(--crease-v);
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+  }
+
+  & .opcja:has(:checked)::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto auto;
+    width: var(--cut);
+    height: var(--cut);
+    background: var(--crease-v);
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    pointer-events: none;
+  }
+
+  & .opcja:has(:disabled) {
+    cursor: default;
+  }
+
+  & .opcja input {
+    accent-color: var(--accent);
+  }
+
+  /* werdykt po oddaniu — ten sam pochylony znacznik co stany w powłoce */
+  & .werdykt {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  & .werdykt::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.5rem;
+    transform: skewX(-20deg);
+    background: currentcolor;
+  }
+
+  & .pytanie[data-ocena='poprawnie'] .werdykt {
+    color: var(--ok);
+  }
+
+  & .pytanie[data-ocena='niepoprawnie'] .werdykt {
+    color: var(--danger);
+  }
+
+  & .uzasadnienie {
+    margin: 0.5rem 0 0;
+    padding-left: 0.8rem;
+    border-left: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  & .wynik {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+    margin-top: 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .wynik .procent {
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: var(--done);
+  }
+
+  & .wynik .liczba,
+  & .wynik .zapis {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  & .wynik .zapis[data-stan='niezapisany'] {
+    color: var(--warn);
+  }
+
+  /* --- sugestie ------------------------------------------------------------- */
+
+  & .sugestie ul {
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-lesson] * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

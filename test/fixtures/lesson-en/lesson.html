@@ -1,0 +1,166 @@
+<!doctype html>
+<!--
+  Lesson fixture (en). Same lesson as lesson-pl, translated: it proves that the runtime
+  buttons follow <body data-lang>, not the shell language setting.
+-->
+<html lang="en" data-theme="jasny">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>What sound is</title>
+    <link rel="stylesheet" href="/theme.css" />
+    <link rel="stylesheet" href="/print.css" media="print" />
+    <link rel="stylesheet" href="lesson.css" />
+  </head>
+  <body data-project="{{projectId}}" data-lesson="{{lessonId}}" data-lang="en">
+    <header class="lekcja-naglowek"><h1>What sound is</h1></header>
+
+    <section id="teoria">
+      <h2>Theory</h2>
+
+      <section class="pojecie">
+        <h3>Frequency and pitch</h3>
+        <p>
+          Sound is air vibrating. The number of complete vibrations per second is
+          <strong>frequency</strong>, measured in hertz (Hz). The more vibrations, the higher the
+          sound.
+        </p>
+        <p>
+          The relation is simple and always the same: doubling the frequency raises the sound by an
+          octave. An A at 220 Hz and an A at 440 Hz are the same note, one octave apart.
+        </p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 472 200" role="img" aria-label="Two waves: 220 Hz and 440 Hz">
+            <line class="os" x1="20" y1="55" x2="452" y2="55" />
+            <line class="os" x1="20" y1="145" x2="452" y2="145" />
+            <path
+              class="fala"
+              stroke="var(--wiz-1)"
+              d="M20 55 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0
+                 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0
+                 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0
+                 c19.44-46.55 34.56-46.55 54 0 c19.44 46.55 34.56 46.55 54 0"
+            />
+            <path
+              class="fala"
+              stroke="var(--wiz-2)"
+              d="M20 145 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0
+                 c9.72-46.55 17.28-46.55 27 0 c9.72 46.55 17.28 46.55 27 0"
+            />
+            <text class="opis" x="20" y="22">220 Hz — A</text>
+            <text class="opis" x="20" y="112">440 Hz — A one octave up</text>
+          </svg>
+          <figcaption>Same amplitude, two frequencies</figcaption>
+        </figure>
+
+        <div class="mikro-pytanie">
+          <p>How many hertz has the note one octave above 330 Hz?</p>
+          <div data-chowane>
+            <p>660 Hz. An octave is always a 2:1 ratio, no matter where you start.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pojecie">
+        <h3>Amplitude and loudness</h3>
+        <p>
+          <strong>Amplitude</strong> is how far the vibration swings — how hard the air is
+          compressed and rarefied. The ear reads it as loudness, measured in decibels (dB).
+        </p>
+        <p>
+          The decibel scale is logarithmic: +10 dB feels roughly twice as loud, although the energy
+          grows tenfold. Amplitude has nothing to do with pitch — the two change independently.
+        </p>
+
+        <div class="mikro-pytanie">
+          <p>Two sounds share a frequency, but the second one has twice the amplitude. What differs?</p>
+          <div data-chowane>
+            <p>
+              Loudness only. Pitch comes from frequency, so it stays put — it is the same note played
+              harder.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pojecie">
+        <h3>Timbre and overtones</h3>
+        <p>
+          A pure tone — a clean sine wave — barely exists in nature. A real sound is the sum of a
+          fundamental and its <strong>overtones</strong>: vibrations at whole multiples of the
+          fundamental frequency.
+        </p>
+        <p>
+          Pitch is heard from the fundamental, while the amplitude ratios of the overtones make the
+          <strong>timbre</strong>. That is why a violin and a flute playing the same A 440 Hz are
+          told apart from a single note.
+        </p>
+
+        <div class="mikro-pytanie">
+          <p>A violin and a flute both play A 440 Hz. What exactly sets them apart?</p>
+          <div data-chowane>
+            <p>The overtone ratios, that is the timbre. The fundamental frequency is identical.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="praktyka">
+      <h2>Practice</h2>
+
+      <section class="cwiczenie">
+        <h3>Exercise 1 — octaves in numbers</h3>
+        <p>Write down four consecutive octaves of the note A, starting at 110 Hz.</p>
+        <div data-chowane>
+          <p>110 Hz, 220 Hz, 440 Hz, 880 Hz. Every step doubles the previous value.</p>
+        </div>
+      </section>
+
+      <section class="cwiczenie">
+        <h3>Exercise 2 — two objects</h3>
+        <p>
+          Find two objects in the room that sound clearly different in pitch (a glass and a mug, for
+          instance). Say which one vibrates faster.
+        </p>
+        <div data-chowane>
+          <p>
+            The one that sounds higher vibrates faster. Smaller and stiffer things usually vibrate
+            faster, so they sound higher.
+          </p>
+        </div>
+      </section>
+
+      <section class="cwiczenie">
+        <h3>Exercise 3 — soft and loud</h3>
+        <p>Hum the same note twice: once softly, once loudly. Name what did not change.</p>
+        <div data-chowane>
+          <p>
+            The frequency, that is the pitch, did not change. Only the amplitude did — the same
+            vibration with more force behind it.
+          </p>
+        </div>
+      </section>
+    </section>
+
+    <section id="sprawdzian" class="sprawdzian"></section>
+
+    <section id="sugestie" class="sugestie">
+      <h2>What next</h2>
+      <ul>
+        <li>Review: work out the octaves of the note C, starting at 65 Hz.</li>
+        <li>Deeper: equal temperament and why an octave holds 12 semitones.</li>
+        <li>New thread: resonance and what an instrument body does with it.</li>
+      </ul>
+    </section>
+
+    <script type="module" src="/runtime.js"></script>
+    <script type="module" src="lesson.js"></script>
+  </body>
+</html>
