@@ -132,6 +132,10 @@ export const dict = {
     'lesson.missing': 'Tej lekcji nie ma albo nie jest jeszcze gotowa.',
     'lesson.frame': 'Treść lekcji: {title}',
 
+    'print.course': 'Eksportuj kurs do PDF',
+    'print.lesson': 'Eksportuj do PDF',
+    'print.none': 'Żadna lekcja nie jest jeszcze gotowa do wydruku.',
+
     'settings.title': 'Ustawienia modelu',
     'settings.buffer': 'Lekcje generowane z góry',
     'settings.buffer.hint':
@@ -328,6 +332,10 @@ export const dict = {
     'lesson.next': 'Next',
     'lesson.missing': 'This lesson does not exist or is not ready yet.',
     'lesson.frame': 'Lesson content: {title}',
+
+    'print.course': 'Export course to PDF',
+    'print.lesson': 'Export to PDF',
+    'print.none': 'No lesson is ready to print yet.',
 
     'settings.title': 'Model settings',
     'settings.buffer': 'Lessons generated ahead',

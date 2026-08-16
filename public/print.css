@@ -1,1 +1,116 @@
-/* Wydruk lekcji — wypełnia faza 11. Plik istnieje już teraz, bo szablon go linkuje. */
+/* Arkusz wydruku. Ładowany dwojako: strona /print/… trzyma go na stałe, pojedyncza lekcja
+   przez media="print". Dlatego bez @media w środku — o momencie decyduje link.
+   Jasną paletę wymusza runtime.js (beforeprint przestawia data-theme), więc palety tu nie ma:
+   kopia zmiennych motywu rozjechałaby się z theme.css przy pierwszej zmianie koloru. */
+
+@page {
+  size: A4;
+  margin: 18mm 15mm;
+}
+
+/* Arkusz na papierze: bez ziarna, bez zagięć, bez ograniczenia szerokości ekranu. */
+body[data-lesson] {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-size: 10.5pt;
+  /* Bez wartości koloru: `none` zdejmuje ziarno i zagięcia, papier zostaje papierem. */
+  background: none !important;
+}
+
+/* Interfejs to nie treść: przyciski, panele sterowania, pola do wpisywania i konsola. */
+body[data-lesson]
+  :is(
+    button,
+    .sterowanie,
+    .chowane-przelacz,
+    .edytor,
+    .odpowiedz,
+    .konsola,
+    .etykieta-wyniku,
+    .podglad-kodu,
+    .blad-oceny,
+    .zapis
+  ) {
+  display: none !important;
+}
+
+/* Wydruk jest kompletnym materiałem, nie zestawem zagadek. */
+body[data-lesson] :is([data-chowane], .rozwiazanie)[hidden] {
+  display: block !important;
+}
+
+/* Kod startowy edytora — wydrukowany, a nie schowany w polu, którego na papierze nie ma. */
+body[data-lesson] .kod-druk {
+  margin: 0.6rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Wybrana odpowiedź poznaje się po ramce, nie po tle: „grafiki tła" w oknie drukowania
+   są domyślnie wyłączone i samo tło opcji nie dojechałoby na papier. */
+body[data-lesson] .opcja:has(:checked) {
+  border-left: 3px solid var(--text);
+}
+
+/* Tła niosące znaczenie: zaznaczona odpowiedź i znacznik werdyktu. Bez tego znikają. */
+body[data-lesson] :is(.opcja:has(:checked), .opcja:has(:checked)::after, .werdykt::before) {
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* Wykres pęknięty na pół strony jest bezużyteczny. */
+body[data-lesson] :is(.pojecie, .cwiczenie, .demko, .diagram, .pytanie, .mikro-pytanie) {
+  break-inside: avoid;
+}
+
+body[data-lesson] :is(h1, h2, h3, h4) {
+  break-after: avoid;
+}
+
+/* Kurs offline — adres w nawiasie nic nie wnosi. */
+body[data-lesson] a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* --- dokument zbiorczy (/print/:projectId) --------------------------------- */
+
+.spis ol {
+  padding-left: 0;
+  list-style: none;
+}
+
+.spis li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: baseline;
+  max-width: none;
+  padding: 0.25rem 0;
+  border-bottom: 1px dotted var(--border);
+}
+
+.spis .num {
+  min-width: 3.5ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.spis .adnotacja {
+  margin-left: auto;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Każda lekcja od nowej strony; pierwsza po spisie treści też. Reguła po sąsiedztwie,
+   bo w wydruku pojedynczej lekcji nie ma spisu i pusta pierwsza strona byłaby błędem. */
+:is(.spis + .lekcja-druk, .lekcja-druk + .lekcja-druk) {
+  break-before: page;
+}

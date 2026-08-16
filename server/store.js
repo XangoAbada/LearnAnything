@@ -200,6 +200,12 @@ export function resetLessonDir(projectId, lesson) {
   return createLessonDir(projectId, lesson);
 }
 
+/** Plik lekcji dla wydruku — składanie dokumentu nie zna ścieżek, jak reszta kodu. */
+export function readLessonHtml(projectId, lesson) {
+  const file = path.join(lessonDir(projectId, lesson), 'index.html');
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+}
+
 /** Nazwy plików lekcji — generator sprawdza nimi, co model faktycznie napisał. */
 export function lessonFiles(projectId, lesson) {
   const dir = lessonDir(projectId, lesson);

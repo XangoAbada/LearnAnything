@@ -949,6 +949,22 @@ async function screenProject([id], s) {
             textContent: t('suggest.thread'),
             onclick: proponujWatek,
           }),
+          // Zwykły odnośnik, nie przycisk: PDF robi przeglądarka ze strony /print/…,
+          // aplikacja nie ma generatora. Bez gotowej lekcji nie ma czego drukować.
+          ready
+            ? h('a', {
+                className: 'ghost',
+                href: `/print/${id}`,
+                target: '_blank',
+                rel: 'noopener',
+                textContent: t('print.course'),
+              })
+            : h('span', {
+                className: 'ghost disabled',
+                'aria-disabled': 'true',
+                title: t('print.none'),
+                textContent: t('print.course'),
+              }),
         ])
       : null,
   ]);
@@ -986,6 +1002,13 @@ async function screenLesson([id, lessonId], s) {
       h('span', { className: 'title', textContent: lesson.title }),
       step(-1, 'lesson.prev'),
       step(1, 'lesson.next'),
+      h('a', {
+        className: 'ghost',
+        href: `/print/${id}/${lesson.id}`,
+        target: '_blank',
+        rel: 'noopener',
+        textContent: t('print.lesson'),
+      }),
     ]),
     h('iframe', {
       className: 'lesson-frame',

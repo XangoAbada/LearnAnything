@@ -11,7 +11,7 @@ import { confirmDialog } from './confirm.js';
 
 // Lekcja ma własny słownik zamiast i18n.js powłoki: kilkanaście przycisków jest tańsze
 // niż zależność, a język lekcji siedzi w <body data-lang>, nie w ustawieniu powłoki.
-const texts = {
+export const texts = {
   pl: {
     show: 'Pokaż odpowiedź',
     hide: 'Ukryj odpowiedź',
@@ -120,6 +120,23 @@ const el = (tag, props = {}, kids = []) => {
   node.append(...[].concat(kids).filter(Boolean));
   return node;
 };
+
+// --- wydruk ------------------------------------------------------------------
+// Strona /print/… stawia <body data-druk="1">. Wtedy lekcja rysuje się w stanie
+// początkowym (bez localStorage), z odsłoniętymi odpowiedziami i bez interfejsu:
+// ten sam kurs wydrukowany dwa razy ma dać ten sam dokument.
+
+const DRUK = typeof document !== 'undefined' && document.body?.dataset.druk === '1';
+
+// Dokument zbiorczy skleja kilka lekcji, a każda ma własne #teoria/#praktyka. Marker
+// wstawiony przed lesson.js przestawia korzeń, więc domyślne cele trafiają tam, gdzie trzeba.
+let korzen = null;
+const zasieg = () => korzen ?? document;
+const sekcja = (id) => zasieg().querySelector(`#${id}`);
+
+// Komponenty biblioteki dociągają się dynamicznym importem — wydruk musi na nie poczekać,
+// inaczej okno drukowania stanie nad pustymi ramkami.
+const czekaja = [];
 
 // --- stan lekcji -------------------------------------------------------------
 // Stan należy do przeglądarki: jeden klucz na lekcję, serwer o nim nie wie. To wygoda,
@@ -299,7 +316,7 @@ const zebrane = (pytania, form) =>
   );
 
 /** API dla lesson.js: rysuje sprawdzian, ocenia po oddaniu i wysyła wynik. */
-export function quiz(pytania, target = document.getElementById('sprawdzian')) {
+export function quiz(pytania, target = sekcja('sprawdzian')) {
   const blocks = new Map();
   const form = el('form', { className: 'pytania' });
 
@@ -328,6 +345,23 @@ export function quiz(pytania, target = document.getElementById('sprawdzian')) {
     ]);
     blocks.set(question.id, block);
     form.append(block);
+  }
+
+  // Na papierze nie ma czego oddawać: poprawne odpowiedzi zaznaczone, uzasadnienie przy pytaniu.
+  if (DRUK) {
+    for (const question of pytania) {
+      const block = blocks.get(question.id);
+      [...block.querySelectorAll('input')].forEach((input, i) => {
+        input.checked = (question.poprawne ?? []).includes(i);
+        input.disabled = true;
+      });
+      if (question.uzasadnienie) {
+        block.append(
+          el('p', { className: 'uzasadnienie', textContent: `${tl('why')}: ${question.uzasadnienie}` }),
+        );
+      }
+    }
+    return target.append(el('h2', { textContent: tl('quiz') }), form);
   }
 
   const submit = el('button', { type: 'submit', className: 'primary', textContent: tl('submit') });
@@ -445,7 +479,7 @@ function cwiczenie({ id, tresc, rozwiazanie = '', demko = '' }, numer) {
   // ze stanem chowanych z teorii.
   const wzorzec =
     rozwiazanie &&
-    el('div', { className: 'rozwiazanie', hidden: true }, [
+    el('div', { className: 'rozwiazanie', hidden: !DRUK }, [
       el('h4', { textContent: tl('solution') }),
       el('div', { 'data-chowane': '', id: `rozwiazanie-${id}` }, [
         el('p', { textContent: rozwiazanie }),
@@ -499,7 +533,7 @@ function cwiczenie({ id, tresc, rozwiazanie = '', demko = '' }, numer) {
 }
 
 /** API dla lesson.js: rysuje ćwiczenia praktyki i podpina ocenę modelu. */
-export function cwiczenia(lista, target = document.getElementById('praktyka')) {
+export function cwiczenia(lista, target = sekcja('praktyka')) {
   target.append(
     el('h2', { textContent: tl('practice') }),
     ...lista.map((cw, i) => cwiczenie(cw, i + 1)),
@@ -522,7 +556,7 @@ export const przytnij = (wartosc, min, max) => Math.min(Math.max(wartosc, min), 
 export const krokIndeks = (indeks, ruch, ile) => przytnij(indeks + ruch, 0, Math.max(ile - 1, 0));
 
 function ramka(cel, id, typ) {
-  const host = typeof cel === 'string' ? document.querySelector(cel) : cel;
+  const host = typeof cel === 'string' ? zasieg().querySelector(cel) : cel;
   if (!host) throw new Error(`demko: nie ma elementu ${cel}`);
   const klucz = id || host.id;
   if (!klucz) throw new Error('demko: brak stabilnego id');
@@ -851,6 +885,11 @@ function dokumentSandboxa(jezyk, kod, podglad) {
  */
 export function demoKod({ el: cel, id, jezyk = 'js', kodStartowy = '', opis = '', podglad = '' }) {
   const { host, klucz } = ramka(cel, id, 'kod');
+  // Na papierze nie ma czego uruchamiać: zostaje kod startowy, bez pola i bez panelu wyniku.
+  if (DRUK) {
+    dolacz(host, [opisDemka(opis), el('pre', { className: 'kod-druk', textContent: kodStartowy })]);
+    return null;
+  }
   const edytor = el('textarea', {
     className: 'edytor',
     spellcheck: false,
@@ -1024,8 +1063,12 @@ export function komponent(opcje = {}) {
   if (!powloka) return Promise.reject(new Error(`komponent: nieznany tryb ${tryb}`));
   if (!opcje.nazwa) return Promise.resolve(powloka(opcje));
 
-  return zaladujKomponent(opcje.nazwa).then(
+  // Korzeń zapamiętany przed pobraniem modułu: zanim komponent dojedzie, marker wydruku
+  // stoi już przy kolejnej lekcji, a ten rysunek należy do tej.
+  const tu = korzen;
+  const gotowy = zaladujKomponent(opcje.nazwa).then(
     (modul) => {
+      korzen = tu;
       wstrzyknijStyl(opcje.nazwa, modul.style);
       const adapter = adaptery[tryb];
       const rysuj = adapter ? adapter(modul.rysuj, opcje.dane ?? {}) : opcje.rysuj;
@@ -1033,6 +1076,8 @@ export function komponent(opcje = {}) {
     },
     (err) => bladKomponentu(opcje, err),
   );
+  czekaja.push(gotowy);
+  return gotowy;
 }
 
 /** Brakujący albo popsuty komponent zostawia ślad w lekcji i nigdy nie rzuca — reszta ma działać. */
@@ -1095,24 +1140,35 @@ function dodajUkonczenie(target) {
 
 // Node importuje ten moduł dla samej oceny — reszta rusza wyłącznie w przeglądarce.
 if (typeof document !== 'undefined') {
-  const { project, lesson } = document.body.dataset;
-  // Sam dostęp do localStorage potrafi rzucić (tryb prywatny, dokument bez originu).
-  let magazyn = null;
-  try {
-    magazyn = localStorage;
-  } catch {}
-  stan = stanLekcji(`learnanything:${project}:${lesson}`, magazyn);
-  // Karta zamknięta w trakcie debounce'u nie może zjeść ostatniej zmiany.
-  addEventListener('pagehide', stan.spisz);
+  // Wydruk pomija stan i motyw: strona /print/… jest z założenia jasna i zawsze taka sama.
+  if (!DRUK) {
+    const { project, lesson } = document.body.dataset;
+    // Sam dostęp do localStorage potrafi rzucić (tryb prywatny, dokument bez originu).
+    let magazyn = null;
+    try {
+      magazyn = localStorage;
+    } catch {}
+    stan = stanLekcji(`learnanything:${project}:${lesson}`, magazyn);
+    // Karta zamknięta w trakcie debounce'u nie może zjeść ostatniej zmiany.
+    addEventListener('pagehide', stan.spisz);
 
-  ustawMotyw();
-  // Powłoka pisze motyw do localStorage, a przeglądarka rozsyła 'storage' do pozostałych
-  // dokumentów tego origin — iframe łapie zmianę bez postMessage i bez przeładowania.
-  addEventListener('storage', (ev) => {
-    if (ev.key !== MOTYW_KLUCZ) return;
     ustawMotyw();
-    for (const demko of demka.values()) demko.przerysuj(); // Canvas nie widzi zmiennych CSS
-  });
+    // Powłoka pisze motyw do localStorage, a przeglądarka rozsyła 'storage' do pozostałych
+    // dokumentów tego origin — iframe łapie zmianę bez postMessage i bez przeładowania.
+    addEventListener('storage', (ev) => {
+      if (ev.key !== MOTYW_KLUCZ) return;
+      ustawMotyw();
+      for (const demko of demka.values()) demko.przerysuj(); // Canvas nie widzi zmiennych CSS
+    });
+
+    // Papier jest jasny zawsze — ciemny motyw to zmarnowany toner i nieczytelny wykres.
+    // Przestawienie atrybutu jest tańsze niż kopia całej palety w print.css.
+    addEventListener('beforeprint', () => {
+      document.documentElement.dataset.theme = 'jasny';
+      for (const demko of demka.values()) demko.przerysuj();
+    });
+    addEventListener('afterprint', ustawMotyw);
+  }
 
   window.LA = {
     quiz,
@@ -1130,13 +1186,27 @@ if (typeof document !== 'undefined') {
     demoKod: (o) => komponent({ ...o, tryb: 'kod' }),
     demka,
     stan,
+    // Wydruk zbiorczy woła to sam: marker przed skryptem każdej lekcji przestawia korzeń,
+    // a `drukuj` otwiera okno drukowania dopiero, gdy komponenty się dociągnęły.
+    druk: (lessonId) => {
+      korzen = document.querySelector(`article[data-lesson="${lessonId}"]`);
+    },
+    drukuj: () =>
+      addEventListener('load', () =>
+        Promise.all(czekaja).then(
+          () => print(),
+          () => print(),
+        ),
+      ),
   };
-  initChowane();
-  dodajRestart();
-  // Oba skrypty szablonu są modułami, więc lesson.js wykonał się przed tym zdarzeniem:
-  // pusta sekcja znaczy „ta lekcja nie ma sprawdzianu", a nie „jeszcze się nie narysował".
-  addEventListener('DOMContentLoaded', () => {
-    const sprawdzian = document.getElementById('sprawdzian');
-    if (sprawdzian && !sprawdzian.children.length) dodajUkonczenie(sprawdzian);
-  });
+  if (!DRUK) {
+    initChowane();
+    dodajRestart();
+    // Oba skrypty szablonu są modułami, więc lesson.js wykonał się przed tym zdarzeniem:
+    // pusta sekcja znaczy „ta lekcja nie ma sprawdzianu", a nie „jeszcze się nie narysował".
+    addEventListener('DOMContentLoaded', () => {
+      const sprawdzian = document.getElementById('sprawdzian');
+      if (sprawdzian && !sprawdzian.children.length) dodajUkonczenie(sprawdzian);
+    });
+  }
 }

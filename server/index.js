@@ -4,6 +4,7 @@ import express from 'express';
 import { config, projectsDir } from './config.js';
 import { assertClaudeAvailable, listModels } from './claude.js';
 import { api } from './api.js';
+import { print } from './print.js';
 import { recoverOnBoot } from './queue.js';
 
 const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
@@ -11,6 +12,8 @@ const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 
 const app = express();
 app.use(express.json());
 app.use('/api', api);
+// Strony wydruku poza /api: to dokumenty dla przeglądarki, nie REST.
+app.use('/print', print);
 
 // Pliki lekcji serwowane wprost z katalogu projektu — nie ma osobnego kroku eksportu.
 app.use('/lessons/:projectId', (req, res, next) => {
