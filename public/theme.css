@@ -69,7 +69,6 @@
 
   /* stany */
   --accent: #24518f;
-  --accent-text: #fbfaf7;
   --ok: #2f6f4f;
   --warn: #96660f;
   --danger: #a8321e;
@@ -84,9 +83,6 @@
   --wiz-5: #605d56;
   --wiz-siatka: #ccc8bd;
   --wiz-podswietlenie: rgb(168 198 232 / 45%);
-
-  --shadow: 0 2px 6px rgb(10 10 10 / 14%);
-  --shadow-lift: 0 8px 20px rgb(10 10 10 / 16%);
 
   /* Cień elementu ze ściętym rogiem: filtr idzie za kształtem, box-shadow zostaje przycięty. */
   --drop: drop-shadow(0 2px 3px rgb(10 10 10 / 12%));
@@ -118,7 +114,6 @@
   --on-foil: #101012;
 
   --accent: #9dc0f0;
-  --accent-text: #101012;
   --ok: #74c096;
   --warn: #dda63f;
   --danger: #ef8a76;
@@ -132,8 +127,6 @@
   --wiz-siatka: #35353a;
   --wiz-podswietlenie: rgb(63 96 132 / 45%);
 
-  --shadow: 0 2px 8px rgb(0 0 0 / 55%);
-  --shadow-lift: 0 10px 26px rgb(0 0 0 / 62%);
   --drop: drop-shadow(0 2px 3px rgb(0 0 0 / 55%));
   --drop-lift: drop-shadow(0 7px 16px rgb(0 0 0 / 65%));
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)' opacity='0.28'/%3E%3C/svg%3E");
@@ -143,7 +136,6 @@
 :root {
   --radius: 0; /* ten świat tnie rogi, nie zaokrągla ich */
   --cut: 0.9rem; /* wielkość ścięcia narożnika */
-  --gap: 1rem;
   --font: 'Spline Sans Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
   --font-display: 'Michroma', 'Spline Sans Mono', system-ui, sans-serif;
   --font-mono: 'Spline Sans Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
