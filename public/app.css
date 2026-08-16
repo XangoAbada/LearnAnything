@@ -38,6 +38,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Trzeci przełącznik nie mieści się w jednej linii na wąskim ekranie — spada do drugiej. */
+  flex-wrap: wrap;
   gap: 0.6rem;
   padding: 0.7rem clamp(0.8rem, 3vw, 1.4rem);
   background: var(--surface);
@@ -63,16 +65,19 @@ body {
 
 .switches {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.switches button {
+.switches button,
+.switches a {
   position: relative;
   clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0 100%);
 }
 
 /* Klapek, nie linia: przekątna rysowana dokładnie na cięciu clip-path znikała co do piksela. */
-.switches button::after {
+.switches button::after,
+.switches a::after {
   content: '';
   position: absolute;
   inset: 0 0 auto auto;
@@ -83,7 +88,8 @@ body {
 }
 
 /* clip-path ucina pierścień focusu, więc wchodzi on do środka */
-.switches button:focus-visible {
+.switches button:focus-visible,
+.switches a:focus-visible {
   outline-offset: -4px;
 }
 
@@ -408,7 +414,11 @@ p {
 
 /* --- sterowanie ------------------------------------------------------------- */
 
-button {
+/* Nawigacja zostaje <a>, ale ma wyglądać jak sterowanie: link ustawień w linijce arkusza
+   i skoki między lekcjami biorą ten sam wygląd co przycisk. */
+button,
+.switches a,
+.lesson-bar .ghost {
   font: inherit;
   font-size: 0.74rem;
   letter-spacing: 0.12em;
@@ -425,12 +435,16 @@ button {
     color var(--step) ease;
 }
 
-button:hover {
+button:hover,
+.switches a:hover,
+.lesson-bar a.ghost:hover {
   border-color: var(--crease-m);
   background: var(--surface-2);
 }
 
-button:focus-visible {
+button:focus-visible,
+.switches a:focus-visible,
+.lesson-bar a.ghost:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -471,8 +485,11 @@ button.primary:disabled {
   color: var(--muted);
 }
 
-button.ghost {
+button.ghost,
+.switches a.ghost,
+.lesson-bar .ghost {
   background: transparent;
+  text-decoration: none;
 }
 
 button.danger {
@@ -733,4 +750,180 @@ textarea:focus-visible {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* --- ustawienia modelu ------------------------------------------------------ */
+
+.intro {
+  max-width: 60ch;
+  margin: 0.4rem 0 1.4rem;
+}
+
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stage-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.stage-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1 1 15rem;
+  min-width: 0;
+}
+
+.stage-name small {
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+/* Stała szerokość, nie shrink: inaczej każdy wiersz ma inną krawędź selecta.
+   min-width: 0 gasi automatyczne minimum flexa — bez niego select rozpycha się do
+   najszerszej opcji ponad basis, więc wiersz z krótką listą („domyślny" przy haiku)
+   ma inną krawędź niż wiersz z „bardzo wysoki". Basis z zapasem, żeby nie ucinało. */
+.stage-row select.model,
+.stage-row select.effort {
+  min-width: 0;
+}
+
+.stage-row select.model {
+  flex: 0 0 12rem;
+}
+
+.stage-row select.effort {
+  flex: 0 0 10.5rem;
+}
+
+.stage-row input.bufor {
+  flex: 0 0 5rem;
+}
+
+/* --- postęp generowania ------------------------------------------------------ */
+
+/* Kurs rozkłada się zagięcie po zagięciu: pasek to ta sama linia, którą wypełnia --done. */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0 0 1rem;
+}
+
+.progress .bar {
+  flex: 1 1 auto;
+  height: 3px;
+  background: linear-gradient(var(--accent), var(--accent)) left / calc(var(--done, 0) * 100%) 100%
+    no-repeat;
+  background-color: var(--surface-2);
+  transition: background-size var(--step) ease;
+}
+
+.progress .label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lessons .score {
+  font-size: 0.74rem;
+  color: var(--done);
+  font-variant-numeric: tabular-nums;
+}
+
+.lessons a.title {
+  color: var(--text);
+  text-decoration-color: var(--crease-v);
+  text-underline-offset: 0.25em;
+}
+
+.lessons a.title:hover {
+  color: var(--accent);
+}
+
+/* --- widok lekcji ------------------------------------------------------------ */
+
+.lesson-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.lesson-bar .back {
+  margin: 0;
+}
+
+.lesson-bar .title {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.lesson-bar .ghost.disabled {
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Lekcja niesie własne tło i marginesy — ramka daje jej tylko pole. */
+.lesson-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 12rem);
+  min-height: 30rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+/* --- propozycje: zagięcie zaznaczone ołówkiem, jeszcze nie zrobione ---------- */
+
+.suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+
+.suggestions li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.9rem;
+  padding: 0.7rem 0.2rem;
+  border-bottom: 1px dashed var(--border);
+}
+
+.suggestion .kind {
+  min-width: 8rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--accent);
+}
+
+.suggestion .why {
+  flex: 1 1 18rem;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.suggestion .src {
+  font-size: 0.75rem;
+}
+
+.add-lesson textarea {
+  resize: vertical;
 }

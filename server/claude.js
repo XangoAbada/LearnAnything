@@ -1,4 +1,5 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import { readSettings } from './store.js';
 
 // Jedyny plik w projekcie, który zna SDK. Reszta aplikacji woła runClaude/runClaudeJson.
 
@@ -14,12 +15,33 @@ function envWithoutApiKey() {
 }
 
 /**
+ * Składa `options` dla SDK. Wydzielone z runClaude, bo to jedyne miejsce, w którym
+ * ustawienia etapu spotykają się z wywołaniem — i jedyne, które da się sprawdzić testem.
+ * Brak etapu albo `null` w ustawieniu znaczy „domyślne z CLI”: pole nie trafia do options.
+ */
+export function queryOptions({ stage, cwd, allowedTools = [], maxTurns = 1, abortController }) {
+  const { model = null, effort = null } = (stage && readSettings()[stage]) || {};
+  return {
+    cwd,
+    allowedTools,
+    maxTurns,
+    permissionMode: allowedTools.length ? 'acceptEdits' : 'default',
+    settingSources: [], // izolacja od cudzych CLAUDE.md — nie dotyka poświadczeń
+    env: envWithoutApiKey(),
+    abortController,
+    ...(model ? { model } : {}),
+    ...(effort ? { effort } : {}),
+  };
+}
+
+/**
  * @param {object} p
  * @param {string}   p.prompt        pełny tekst promptu
  * @param {string}  [p.cwd]          katalog roboczy — przy generowaniu lekcji katalog lekcji
  * @param {string[]}[p.allowedTools] domyślnie [] (brak narzędzi — czysty tekst)
  * @param {number}  [p.maxTurns]     domyślnie 1 dla zadań tekstowych
  * @param {number}  [p.timeoutMs]    domyślnie 120_000; lekcje dostają więcej
+ * @param {string}  [p.stage]        etap aplikacji — decyduje o modelu i poziomie rozumowania
  * @returns {Promise<string>}        tekst wyniku
  */
 export async function runClaude({
@@ -28,6 +50,7 @@ export async function runClaude({
   allowedTools = [],
   maxTurns = 1,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  stage,
 }) {
   const abortController = new AbortController();
   // Sam abortController nie przerywa wywołania w locie (sprawdzone: abort po 1 s, wynik po 6 s),
@@ -43,15 +66,7 @@ export async function runClaude({
   const consume = async () => {
     for await (const message of query({
       prompt,
-      options: {
-        cwd,
-        allowedTools,
-        maxTurns,
-        permissionMode: allowedTools.length ? 'acceptEdits' : 'default',
-        settingSources: [], // izolacja od cudzych CLAUDE.md — nie dotyka poświadczeń
-        env: envWithoutApiKey(),
-        abortController,
-      },
+      options: queryOptions({ stage, cwd, allowedTools, maxTurns, abortController }),
     })) {
       if (message.type === 'result') {
         if (message.subtype === 'success') return message.result;
@@ -142,4 +157,47 @@ export async function assertClaudeAvailable() {
       `Brak dostępu do Claude Code — zaloguj się poleceniem \`claude\` i uruchom ponownie.\n(${err.message})`,
     );
   }
+}
+
+// --- lista modeli -----------------------------------------------------------
+
+// ponytail: lista zapasowa aliasów CLI — starzeje się, ale ekran ustawień ma działać
+// także wtedy, gdy CLI nie odpowie. Poziomy puste, bo bez odpowiedzi nie wiemy, co model wspiera.
+const FALLBACK_MODELS = ['fable', 'opus', 'sonnet', 'haiku'].map((value) => ({
+  value,
+  displayName: value,
+  description: '',
+  supportsEffort: true,
+  supportedEffortLevels: [],
+}));
+
+let models = null;
+
+/** Lista pobrana przy starcie. Nie zmienia się w trakcie życia serwera. */
+export const availableModels = () => models ?? FALLBACK_MODELS;
+
+/**
+ * Żądanie control-protocol, nie wywołanie modelu — nie kosztuje tokenów, ale wymaga
+ * trybu streaming input, stąd prompt jako generator, który nic nie emituje.
+ * Wynik zapamiętany w module; przy błędzie zostaje lista zapasowa.
+ */
+export async function listModels(timeoutMs = 20_000) {
+  const abortController = new AbortController();
+  const never = new Promise(() => {});
+  async function* prompt() {
+    await never; // sesja ma zostać otwarta, dopóki nie wyciągniemy listy
+  }
+
+  const timer = setTimeout(() => abortController.abort(), timeoutMs);
+  try {
+    const q = query({ prompt: prompt(), options: queryOptions({ abortController }) });
+    const found = await q.supportedModels();
+    if (Array.isArray(found) && found.length) models = found;
+  } catch (err) {
+    console.warn(`claude: nie udało się pobrać listy modeli (${err.message}) — lista zapasowa`);
+  } finally {
+    clearTimeout(timer);
+    abortController.abort();
+  }
+  return availableModels();
 }

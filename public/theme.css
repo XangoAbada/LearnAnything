@@ -215,6 +215,20 @@ body[data-lesson] {
     background: linear-gradient(90deg, var(--crease-m) 0 22%, var(--border) 22% 60%, transparent 60%);
   }
 
+  /* Nagłówek lekcji: tytuł i jedna akcja obok niego — reszta sterowania siedzi przy
+     elementach, których dotyczy. */
+  & .lekcja-naglowek {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+  }
+
+  & .lekcja-naglowek h1 {
+    flex: 1 1 20ch;
+  }
+
   /* h2 to etykieta sekcji, h3 tytuł rzeczy leżącej na arkuszu (reguła dwóch rejestrów) */
   & h2 {
     font-size: 0.8rem;
@@ -466,13 +480,243 @@ body[data-lesson] {
     text-align: center;
   }
 
-  /* panel sterowania demka — mechanika dochodzi w fazie 07 */
+  /* --- demka ---------------------------------------------------------------
+     Panel sterowania należy do aplikacji: lekcja podaje dane, wygląd jest tutaj.
+     Kontrolki są natywne (input, select, button) — fokus i klawiatura działają same. */
+
+  & .demko {
+    margin: 1rem 0 0;
+  }
+
+  & .opis-demka {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+
+  /* Przeciąganie ma przesuwać element, nie przewijać stronę pod palcem. */
+  & .demko .diagram {
+    touch-action: none;
+  }
+
   & .demko .sterowanie {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.6rem 0.9rem;
     margin-top: 0.9rem;
+  }
+
+  & .kontrolka {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  & .kontrolka input[type='range'] {
+    width: clamp(6rem, 16vw, 11rem);
+    accent-color: var(--accent);
+  }
+
+  & .kontrolka input[type='checkbox'] {
+    accent-color: var(--accent);
+  }
+
+  & .kontrolka :is(input[type='number'], select) {
+    font: inherit;
+    font-size: 0.8rem;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.3rem 0.4rem;
+  }
+
+  & .kontrolka input[type='number'] {
+    width: 5.5rem;
+  }
+
+  & .kontrolka :is(input, select):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Odczyt suwaka nie ma skakać przy każdej cyfrze — stała szerokość i cyfry tabelaryczne. */
+  & .kontrolka .wartosc {
+    min-width: 4ch;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .wskaznik {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Opis kroku wychodzi zza zagięcia, jak chowana odpowiedź. */
+  & .opis-kroku {
+    margin: 0.8rem 0 0;
+    padding-left: 0.8rem;
+    border-left: 1px solid var(--crease-v);
+    min-height: 1.65em;
+  }
+
+  /* --- edytor kodu ---------------------------------------------------------- */
+
+  & .edytor {
+    display: block;
+    width: 100%;
+    margin-top: 0.2rem;
+    padding: 0.8rem 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    tab-size: 2;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    resize: vertical;
+  }
+
+  & .edytor:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  & .etykieta-wyniku {
+    margin: 1rem 0 0.4rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  & .konsola {
+    max-height: 14rem;
+    overflow: auto;
+    padding: 0.7rem 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  & .konsola .linia {
+    margin: 0;
+    max-width: none;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  & .konsola[data-stan='pusto'] .linia {
+    color: var(--muted);
+  }
+
+  & .konsola .linia[data-typ='blad'] {
+    color: var(--danger);
+  }
+
+  /* Podgląd sandboxa: własny dokument, więc tylko ramka i wysokość. */
+  & .podglad-kodu {
+    display: block;
+    width: 100%;
+    height: 12rem;
+    margin-top: 0.8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  & .podglad-kodu[hidden] {
+    display: none;
+  }
+
+  /* --- praktyka oceniana ----------------------------------------------------
+     Ocenia model, więc werdykt jest trójstopniowy — kolory z tych samych zmiennych
+     co stany powłoki, żeby „częściowo" nie wyglądało jak porażka. */
+
+  & .odpowiedz {
+    display: block;
+    width: 100%;
+    margin-top: 0.8rem;
+    padding: 0.7rem 0.8rem;
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    resize: vertical;
+  }
+
+  & .odpowiedz:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  & .cwiczenie button.primary {
+    margin-top: 0.7rem;
+  }
+
+  & .blad-oceny {
+    margin: 0.8rem 0 0;
+    font-size: 0.85rem;
+    color: var(--warn);
+  }
+
+  & .blad-oceny[hidden] {
+    display: none;
+  }
+
+  & .ocena:not(:empty) {
+    margin-top: 0.9rem;
+    padding-left: 0.8rem;
+    border-left: 1px solid var(--crease-v);
+  }
+
+  & .ocena[data-werdykt='poprawnie'] .werdykt {
+    color: var(--ok);
+  }
+
+  & .ocena[data-werdykt='częściowo'] .werdykt {
+    color: var(--warn);
+  }
+
+  & .ocena[data-werdykt='niepoprawnie'] .werdykt {
+    color: var(--danger);
+  }
+
+  & .wskazowka {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  & .rozwiazanie {
+    margin-top: 1.1rem;
+  }
+
+  & .rozwiazanie[hidden] {
+    display: none;
+  }
+
+  & .rozwiazanie h4 {
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 
   /* --- sprawdzian ----------------------------------------------------------- */

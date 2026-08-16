@@ -30,9 +30,11 @@ for (const file of fs.readdirSync(source)) {
     .readFileSync(path.join(source, file), 'utf8')
     .replaceAll('{{projectId}}', project.id)
     .replaceAll('{{lessonId}}', lesson.id);
-  fs.writeFileSync(path.join(dir, file), content, 'utf8');
+  // Wygenerowana lekcja nazywa się index.html — fikstura wchodzi pod tą samą nazwą,
+  // inaczej ekran lekcji nie otworzyłby zaszczepionego projektu.
+  fs.writeFileSync(path.join(dir, file.replace(/^lesson\.html$/, 'index.html')), content, 'utf8');
 }
 store.updateLesson(project.id, lesson.id, { status: 'gotowa' });
 
 const slug = lesson.path.replace(/^lessons\//, '');
-console.log(`http://localhost:${config.port}/lessons/${project.id}/${slug}/lesson.html`);
+console.log(`http://localhost:${config.port}/lessons/${project.id}/${slug}/index.html`);

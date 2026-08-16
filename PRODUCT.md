@@ -30,7 +30,7 @@ Przerobienie kursu do końca nie jest miarą sukcesu. Porzucony w połowie kurs,
 Trzy rzeczy naraz, których sąsiednie narzędzia nie mają razem:
 
 1. **Spójność wymusza aplikacja, nie prompt.** Wygląd, wzorce dydaktyczne i logika sprawdzianu należą do `theme.css`, `runtime.js` i szablonu lekcji. Claude wypełnia gniazda w stałej strukturze. Dlatego lekcje z dwóch różnych tematów wyglądają jak jeden kurs, a nie jak dwadzieścia odpowiedzi czatu.
-2. **Nic nie powstaje samo z siebie.** Plan kursu i każda dodatkowa lekcja wymagają kliknięcia. Żadna ścieżka w kodzie nie dopisuje lekcji do kolejki z własnej inicjatywy.
+2. **Nic nie powstaje samo z siebie.** Plan kursu i każda dodatkowa lekcja wymagają kliknięcia. Żadna ścieżka w kodzie nie dopisuje lekcji do kolejki z własnej inicjatywy. Kurs generuje się buforem — z przodu czeka kilka lekcji, reszta planu dopiero na akcję użytkownika.
 3. **Rozliczanie subskrypcją Claude Code, nigdy kluczem API.** Generowanie pełnego kursu nie ma licznika tokenów po stronie użytkownika.
 
 ## Operating Context
@@ -43,7 +43,7 @@ Trzy rzeczy naraz, których sąsiednie narzędzia nie mają razem:
 
 ## Capabilities and Constraints
 
-**Funkcje** (fazy 01–05 zamknięte, 06–12 zaplanowane w `implementation-plan/`): projekty i ich usuwanie, wywiad z pominięciem, plan kursu z walidacją widełek, motyw jasny/ciemny, i18n powłoki, szablon lekcji z chowanymi sekcjami, mikro-pytaniami i sprawdzianem. Dalej: kolejka i generowanie przez SSE, demka i edytor kodu w sandboksie, zapamiętywanie stanu lekcji, ocena praktyki, dodawanie lekcji i propozycje, eksport PDF.
+**Funkcje** (fazy 01–09 zamknięte, 10–12 zaplanowane w `implementation-plan/`): projekty i ich usuwanie, wywiad z pominięciem, plan kursu z walidacją widełek, motyw jasny/ciemny, i18n powłoki, szablon lekcji z chowanymi sekcjami, mikro-pytaniami i sprawdzianem, kolejka i generowanie przez SSE, demka i edytor kodu w sandboksie, zapamiętywanie stanu lekcji, ćwiczenia oceniane przez Claude'a ze słabymi punktami wracającymi do kolejnych lekcji. Dalej: dodawanie lekcji i propozycje, eksport PDF.
 
 **Ograniczenia, których żadna praca nie może złamać:**
 
@@ -83,7 +83,7 @@ Nazwy klas komponentów lekcji trafiają do promptu, więc są **ustalone raz i 
 ## Product Principles
 
 1. **Struktura należy do aplikacji, treść do modelu.** Każda decyzja o wyglądzie, kolejności i mechanice jest zapisana w kodzie; prompt nigdy nie odpowiada za spójność.
-2. **Użytkownik pociąga za każdy spust.** Żadne generowanie, kolejkowanie ani dopisywanie lekcji nie dzieje się bez kliknięcia.
+2. **Użytkownik pociąga za każdy spust.** Żadne generowanie, kolejkowanie ani dopisywanie lekcji nie dzieje się bez akcji użytkownika. Uzupełnienie bufora po ukończeniu lekcji jest częścią tej samej akcji — oddania sprawdzianu — a nie inicjatywą aplikacji.
 3. **Wytworzone rzeczy przeżywają sesję.** Lekcja jest samodzielnym plikiem, kurs wraca po tygodniach, historia jest niezmienna.
 4. **Robienie przed czytaniem.** Demko, edytor i ćwiczenie mają pierwszeństwo przed akapitem; tekst obsługuje interakcję, nie odwrotnie.
 5. **Dwa języki to dwie niezależne osie.** Interfejs i kurs zmieniają się osobno, zawsze.

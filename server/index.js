@@ -2,8 +2,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { config, projectsDir } from './config.js';
-import { assertClaudeAvailable } from './claude.js';
+import { assertClaudeAvailable, listModels } from './claude.js';
 import { api } from './api.js';
+import { recoverOnBoot } from './queue.js';
 
 const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
@@ -26,6 +27,15 @@ try {
   console.error(err.message);
   process.exit(1);
 }
+
+// Lista modeli raz, przy starcie — ekran ustawień ma być natychmiastowy.
+// Nieudane pobranie nie blokuje startu: zostaje lista zapasowa.
+await listModels();
+
+// Kolejka po restarcie: lekcje przerwane w połowie wracają do „zaplanowana" i generują się
+// od nowa. To dokończenie zlecenia użytkownika sprzed restartu, nie samoczynny start.
+const resumed = recoverOnBoot();
+if (resumed) console.log(`kolejka: wznowione projekty: ${resumed}`);
 
 app.listen(config.port, () => {
   console.log(`LearnAnything → http://localhost:${config.port}`);

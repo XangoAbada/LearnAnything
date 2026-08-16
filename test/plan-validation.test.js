@@ -13,6 +13,11 @@ const { validatePlan, planCourse, assessInterview, interviewQuestions } = await 
   '../server/generator.js'
 );
 const { api } = await import('../server/api.js');
+const queue = await import('../server/queue.js');
+
+// Od fazy 06 akceptacja planu rusza kolejką. Zaślepka bez końca: lekcja wchodzi w
+// „generowana" i tam zostaje — testy API sprawdzają akceptację, nie generowanie.
+queue.useGenerator(() => new Promise(() => {}));
 
 // Zaślepka modelu w miejscu runClaudeJson: kolejne odpowiedzi z listy, z liczeniem wywołań.
 const stub = (...responses) => {
@@ -154,8 +159,14 @@ test('akceptacja nadaje order 1..n, status zaplanowana i kolejkę w kolejności'
   assert.ok(body.lessons.every((l) => l.status === 'zaplanowana' && l.origin === 'plan'));
   assert.deepEqual(body.lessons.map((l) => l.title), lessons.map((l) => l.title));
   assert.equal(body.project.status, 'generowanie');
-  assert.deepEqual(body.project.queue, body.lessons.map((l) => l.id));
-  assert.deepEqual(store.readIndex(p.id), body.lessons);
+  // Do kolejki idzie tylko bufor lekcji z przodu — reszta planu czeka niewygenerowana.
+  const bufor = store.readBuffer();
+  assert.deepEqual(body.project.queue, body.lessons.slice(0, bufor).map((l) => l.id));
+
+  // Kolejka zdążyła wziąć pierwszą lekcję; reszta czeka dokładnie w stanie z akceptacji.
+  const index = store.readIndex(p.id);
+  assert.equal(index[0].status, 'generowana');
+  assert.deepEqual(index.slice(1), body.lessons.slice(1));
 });
 
 test('druga akceptacja daje 409 i nie rusza indeksu', async () => {
@@ -175,6 +186,22 @@ test('akceptacja poza widełkami to 502, brak projektu to 404, zły kształt to 
   assert.equal((await call('POST', `/projects/${p.id}/plan/accept`, {})).status, 400);
   assert.equal((await call('GET', '/projects/nie-ma-takiego')).status, 404);
   assert.equal((await call('POST', '/projects', { topic: 'X', language: 'de' })).status, 400);
+});
+
+test('„generuj następną” dokłada po jednej, aż plan się skończy', async () => {
+  const p = await newProject();
+  await call('POST', `/projects/${p.id}/interview/skip`);
+  await call('POST', `/projects/${p.id}/plan/accept`, { lessons: plan(10).lessons });
+
+  const bufor = store.readBuffer();
+  for (let i = bufor; i < 10; i += 1) {
+    const { status, body } = await call('POST', `/projects/${p.id}/lessons/next`);
+    assert.equal(status, 200);
+    assert.equal(body.order, i + 1, 'kolejność planu ma być zachowana');
+  }
+  assert.equal(store.readProject(p.id).queue.length, 10);
+  // Nie ma już czego dokładać — 409, nie cichy sukces.
+  assert.equal((await call('POST', `/projects/${p.id}/lessons/next`)).status, 409);
 });
 
 test.after(() => {

@@ -53,7 +53,16 @@ export function toggleTheme() {
   const next = getTheme() === 'jasny' ? 'ciemny' : 'jasny';
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
-  render();
+  // Tylko nagłówek, nie cały ekran: pełne przerysowanie ładuje <iframe> lekcji od nowa,
+  // a lekcja ma złapać motyw w locie — zdarzeniem 'storage', bez przeładowania.
+  document.getElementById('header').replaceChildren(...headerNodes());
+}
+
+/** Stan lekcji należy do przeglądarki, więc tylko ona wie, kiedy go posprzątać. */
+function forgetLessons(projectId) {
+  const prefix = `learnanything:${projectId}:`;
+  for (const key of Object.keys(localStorage))
+    if (key.startsWith(prefix)) localStorage.removeItem(key);
 }
 
 // --- stan ekranu ------------------------------------------------------------
@@ -151,6 +160,7 @@ async function screenProjects(_params, s) {
     if (!confirm(t('projects.delete.confirm', { topic: p.topic }))) return;
     act(s, async () => {
       await request('DELETE', `/api/projects/${p.id}`);
+      forgetLessons(p.id);
       s.projects = null;
     });
   };
@@ -433,13 +443,228 @@ async function screenPlan([id], s) {
   ]);
 }
 
-// --- ekran 4: projekt (pełny w fazie 06) ------------------------------------
+// --- ekran 4: projekt -------------------------------------------------------
+
+// Lekcja otwiera się dopiero, gdy jest co otwierać.
+const otwarta = (lesson) => lesson.status === 'gotowa' || lesson.status === 'ukończona';
+
+// Numer lekcji jest kodem zagięcia: wstawka z fazy 10 zostaje widoczna jako 04.1.
+const lessonCode = (lesson, i) => {
+  const [whole, frac] = String(lesson.order).split('.');
+  return `${i % 2 ? 'V' : 'M'}-${whole.padStart(2, '0')}${frac ? `.${frac}` : ''}`;
+};
+
+const lessonHref = (projectId, lesson) => `#/p/${projectId}/l/${lesson.id}`;
+
+/** Postęp z serwera: każde zdarzenie kolejki dociąga świeży stan projektu. */
+function listen(id, s) {
+  const es = new EventSource(`/api/projects/${id}/events`);
+  const refresh = () =>
+    request('GET', `/api/projects/${id}`)
+      .then((data) => {
+        s.data = data;
+        render();
+      })
+      .catch(() => {}); // zerwane połączenie odbudowuje EventSource, nie my
+  for (const type of ['lesson-started', 'lesson-ready', 'lesson-failed', 'queue-empty']) {
+    es.addEventListener(type, refresh);
+  }
+  return es;
+}
+
+// Tryby dodania lekcji — te same wartości co `origin` po stronie serwera, bez „plan”.
+const MODES = ['pośrednia', 'rozwinięcie', 'powtórka', 'nowy wątek'];
 
 async function screenProject([id], s) {
   s.data ??= await request('GET', `/api/projects/${id}`);
-  const { project, lessons } = s.data;
+  s.es ??= listen(id, s);
+  const { project, lessons, queue, suggestions, minInsertOrder } = s.data;
+  const ready = lessons.filter(otwarta).length;
 
-  // ponytail: podgląd zamiast ekranu projektu — kolejka, SSE i wejście w lekcję przychodzą w fazie 06.
+  // Lekcja z planu, której nikt jeszcze nie zakolejkował — kurs generuje się buforem,
+  // więc dalsza część planu czeka nietknięta.
+  const wKolejce = (l) => queue.running === l.id || queue.waiting.includes(l.id);
+  const czeka = (l) => l.status === 'zaplanowana' && !wKolejce(l);
+
+  const retry = (lesson) =>
+    act(s, async () => {
+      await request('POST', `/api/projects/${id}/lessons/${lesson.id}/retry`);
+      s.data = await request('GET', `/api/projects/${id}`);
+    });
+
+  const generateNext = () =>
+    act(s, async () => {
+      await request('POST', `/api/projects/${id}/lessons/next`);
+      s.data = await request('GET', `/api/projects/${id}`);
+    });
+
+  // Jedyna droga do nowej lekcji — ręczne dodanie i akceptacja propozycji idą tym samym
+  // żądaniem. Propozycja sama z siebie nie kolejkuje niczego.
+  const dodaj = (payload) =>
+    act(s, async () => {
+      await request('POST', `/api/projects/${id}/lessons`, payload);
+      s.add = null;
+      s.data = await request('GET', `/api/projects/${id}`);
+    });
+
+  // Propozycje `powtórka` i `rozwinięcie` przychodzą z odczytu projektu. „Nowy wątek”
+  // wymaga modelu, więc czeka na osobne kliknięcie i żyje tylko w stanie ekranu.
+  const proponujWatek = () =>
+    act(s, async () => {
+      s.threads = (await request('POST', `/api/projects/${id}/suggestions/thread`)).suggestions;
+    });
+
+  const propozycja = (sg, i) =>
+    h('li', { className: 'suggestion deploy', style: `--i:${i}` }, [
+      h('strong', { className: 'kind', textContent: t(`origin.${sg.kind}`) }),
+      h('span', {
+        className: 'why muted',
+        textContent: t(`suggest.reason.${sg.reason.code}`, {
+          score: sg.reason.score,
+          concepts: (sg.reason.concepts ?? []).join(', '),
+          topic: sg.reason.topic,
+        }),
+      }),
+      sg.lessonId
+        ? h('span', {
+            className: 'src muted',
+            textContent: t('suggest.source', {
+              title: lessons.find((l) => l.id === sg.lessonId)?.title ?? '',
+            }),
+          })
+        : null,
+      h('button', {
+        className: 'primary',
+        disabled: !!s.busy,
+        textContent: t('suggest.create'),
+        onclick: () =>
+          dodaj({ afterOrder: sg.afterOrder, mode: sg.kind, brief: sg.brief, title: sg.title }),
+      }),
+    ]);
+
+  // Reguła miejsca w UI: lista „po lekcji N” bierze wyłącznie pozycje, które serwer przyjmie.
+  const dozwolone = lessons.filter((l) => l.order >= minInsertOrder);
+  const otworz = (mode) => {
+    s.add = { mode, afterOrder: dozwolone.at(-1)?.order ?? 0, brief: '' };
+    render();
+  };
+
+  const formularz = () => {
+    const a = s.add;
+    const naKoniec = a.mode === 'nowy wątek'; // nowy wątek dokleja się na końcu kursu
+    return h(
+      'form',
+      {
+        className: 'panel narrow add-lesson',
+        onsubmit: (e) => {
+          e.preventDefault();
+          dodaj({
+            afterOrder: naKoniec ? (lessons.at(-1)?.order ?? 0) : a.afterOrder,
+            mode: a.mode,
+            brief: a.brief,
+          });
+        },
+      },
+      [
+        h('h3', { textContent: t('add.title') }),
+        h('label', { className: 'field' }, [
+          h('span', { textContent: t('add.mode') }),
+          h(
+            'select',
+            {
+              onchange: (e) => {
+                a.mode = e.target.value;
+                render();
+              },
+            },
+            MODES.map((m) => option(m, t(`origin.${m}`), a.mode)),
+          ),
+        ]),
+        h('label', { className: 'field' }, [
+          h('span', { textContent: t('add.after') }),
+          naKoniec
+            ? h('input', { type: 'text', disabled: true, value: t('add.after.end') })
+            : h(
+                'select',
+                {
+                  onchange: (e) => {
+                    a.afterOrder = Number(e.target.value);
+                  },
+                },
+                dozwolone.map((l) => option(String(l.order), `${l.order} · ${l.title}`, String(a.afterOrder))),
+              ),
+        ]),
+        !naKoniec && dozwolone.length < lessons.length
+          ? h('p', { className: 'muted', textContent: t('add.after.locked') })
+          : null,
+        h('label', { className: 'field' }, [
+          h('span', { textContent: t('add.brief') }),
+          h('textarea', {
+            rows: 2,
+            value: a.brief,
+            placeholder: t('add.brief.placeholder'),
+            oninput: (e) => {
+              a.brief = e.target.value;
+            },
+          }),
+        ]),
+        h('div', { className: 'actions' }, [
+          h('button', {
+            className: 'primary',
+            type: 'submit',
+            disabled: !!s.busy,
+            textContent: t('add.submit'),
+          }),
+          h('button', {
+            className: 'ghost',
+            type: 'button',
+            textContent: t('add.cancel'),
+            onclick: () => {
+              s.add = null;
+              render();
+            },
+          }),
+        ]),
+      ],
+    );
+  };
+
+  const row = (lesson, i) =>
+    h('li', { className: 'deploy', style: `--i:${i}` }, [
+      h('span', { className: 'num', textContent: lessonCode(lesson, i) }),
+      otwarta(lesson)
+        ? h('a', {
+            className: 'title',
+            href: lessonHref(id, lesson),
+            textContent: lesson.title,
+            'aria-label': t('project.open', { title: lesson.title }),
+          })
+        : h('span', { className: 'title', textContent: lesson.title }),
+      lesson.score === null
+        ? null
+        : h('span', {
+            className: 'score',
+            textContent: `${lesson.score}%`,
+            title: t('project.score', { score: lesson.score }),
+          }),
+      h('span', {
+        className: 'state',
+        'data-state': lesson.status,
+        textContent: t(czeka(lesson) ? 'status.niewygenerowana' : `status.${lesson.status}`),
+        // Treść błędu z serwera tylko jako podpowiedź — na ekranie zostaje etykieta stanu.
+        title: lesson.error ?? '',
+      }),
+      lesson.status === 'błąd'
+        ? h('button', {
+            className: 'ghost',
+            disabled: !!s.busy,
+            textContent: t('project.retry'),
+            'aria-label': t('project.retry.for', { title: lesson.title }),
+            onclick: () => retry(lesson),
+          })
+        : null,
+    ]);
+
   return h('section', {}, [
     back(),
     h('h1', { className: 'subject', textContent: project.topic }),
@@ -458,26 +683,249 @@ async function screenProject([id], s) {
         }),
       ]),
     ]),
+    s.error ? errorBox(s.error, 'add.error') : null,
+    // Karta propozycji nad listą: rodzaj, czego dotyczy i dlaczego się pojawiła.
+    // Jeden przycisk, żadnego automatu — bez kliknięcia nic się nie generuje.
+    [...suggestions, ...(s.threads ?? [])].length
+      ? h('section', { className: 'suggestions' }, [
+          h('h2', { textContent: t('suggest.title') }),
+          h('ul', {}, [...suggestions, ...(s.threads ?? [])].map(propozycja)),
+        ])
+      : null,
+    s.threads?.length === 0
+      ? h('p', { className: 'muted', role: 'status', textContent: t('suggest.thread.none') })
+      : null,
     h('h2', { textContent: t('project.lessons') }),
     // Lista rysuje się dopiero, gdy jest co rysować — pusty <ol> zostawiał kreskę nad niczym.
     lessons.length
       ? h(
-          'ol',
-          { className: 'lessons' },
-          lessons.map((l, i) =>
-            h('li', { className: 'deploy', style: `--i:${i}` }, [
-              h('span', { className: 'num', textContent: creaseCode(i) }),
-              h('span', { className: 'title', textContent: l.title }),
-              h('span', {
-                className: 'state',
-                'data-state': l.status,
-                textContent: t(`status.${l.status}`),
-              }),
-            ]),
-          ),
+          'div',
+          {
+            className: 'progress',
+            role: 'progressbar',
+            'aria-label': t('project.progress.label'),
+            'aria-valuemin': '0',
+            'aria-valuemax': String(lessons.length),
+            'aria-valuenow': String(ready),
+            style: `--done:${ready / lessons.length}`,
+          },
+          [
+            h('span', { className: 'bar' }),
+            h('span', {
+              className: 'label',
+              textContent: t('project.progress', { done: ready, total: lessons.length }),
+            }),
+          ],
         )
       : null,
-    h('p', { className: 'panel narrow muted', textContent: t('project.soon') }),
+    lessons.length
+      ? h('ol', { className: 'lessons' }, lessons.map(row))
+      : h('p', { className: 'muted', textContent: t('project.empty') }),
+    s.add ? formularz() : null,
+    lessons.length
+      ? h('div', { className: 'actions' }, [
+          // Wyprzedzenie bufora: jeden przycisk dokłada kolejną lekcję z planu.
+          lessons.some(czeka)
+            ? h('button', {
+                className: 'ghost',
+                disabled: !!s.busy,
+                textContent: t('project.generateNext'),
+                onclick: generateNext,
+              })
+            : null,
+          h('button', {
+            className: 'ghost',
+            disabled: !!s.busy,
+            textContent: t('add.open'),
+            onclick: () => otworz('pośrednia'),
+          }),
+          h('button', {
+            className: 'ghost',
+            disabled: !!s.busy,
+            textContent: t('add.extend'),
+            onclick: () => otworz('rozwinięcie'),
+          }),
+          h('button', {
+            className: 'ghost',
+            disabled: !!s.busy,
+            textContent: t('suggest.thread'),
+            onclick: proponujWatek,
+          }),
+        ])
+      : null,
+  ]);
+}
+
+// --- ekran 5: widok lekcji --------------------------------------------------
+
+// Lekcja siedzi w <iframe> bez atrybutu sandbox — to nasze pliki z tego samego origin
+// (faza 08 sięga do nich po motyw i stan). Sandbox jest wewnątrz lekcji, wokół kodu
+// użytkownika (faza 07).
+async function screenLesson([id, lessonId], s) {
+  // Bez nasłuchu postępu: każde przerysowanie ładuje <iframe> od nowa, a lekcja jest
+  // czytana, nie oglądana. Postęp kursu widać na ekranie projektu.
+  s.data ??= await request('GET', `/api/projects/${id}`);
+  const { project, lessons } = s.data;
+
+  const open = lessons.filter(otwarta);
+  const lesson = open.find((l) => l.id === lessonId);
+  const home = h('a', { className: 'back', href: `#/p/${id}`, textContent: t('lesson.project') });
+  if (!lesson) return h('section', {}, [home, errorBox(null, 'lesson.missing')]);
+
+  const i = open.indexOf(lesson);
+  // Sąsiedztwo liczone po `order` wśród lekcji otwieralnych — do niegotowej nie ma dokąd iść.
+  const step = (delta, key) => {
+    const target = open[i + delta];
+    return target
+      ? h('a', { className: 'ghost', href: lessonHref(id, target), textContent: t(key), title: target.title })
+      : h('span', { className: 'ghost disabled', textContent: t(key), 'aria-disabled': 'true' });
+  };
+
+  return h('section', { className: 'lesson-view' }, [
+    h('div', { className: 'lesson-bar' }, [
+      home,
+      h('span', { className: 'num', textContent: lessonCode(lesson, lessons.indexOf(lesson)) }),
+      h('span', { className: 'title', textContent: lesson.title }),
+      step(-1, 'lesson.prev'),
+      step(1, 'lesson.next'),
+    ]),
+    h('iframe', {
+      className: 'lesson-frame',
+      src: `/lessons/${project.id}/${lesson.path.replace(/^lessons\//, '')}/index.html`,
+      title: t('lesson.frame', { title: lesson.title }),
+    }),
+  ]);
+}
+
+// --- ekran ustawień ---------------------------------------------------------
+
+// Pierwsza pozycja obu list to „domyślny” — wartość pusta, czyli pole nie trafia do wywołania.
+const option = (value, label, selected) =>
+  h('option', { value, textContent: label, selected: selected === value });
+
+async function screenSettings(_params, s) {
+  if (!s.data) {
+    s.data = await request('GET', '/api/settings');
+    // Wiersz „default” z CLI byłby drugim „domyślnym” obok naszego — jeden wystarczy.
+    s.data.models = s.data.models.filter((m) => m.value !== 'default');
+  }
+  const { settings, models, efforts } = s.data;
+
+  const modelInfo = (value) => models.find((m) => m.value === value);
+  // Haiku nie ma w swoim wierszu ani supportsEffort, ani listy poziomów — brak informacji
+  // znaczy „nie przyjmuje”, nie „przyjmuje wszystkie”. Stąd kolejność: lista, flaga, nic.
+  const levelsFor = (value) => {
+    const info = modelInfo(value);
+    if (!info) return efforts; // brak modelu albo nazwa spoza listy: pokazujemy wszystkie
+    if (info.supportedEffortLevels?.length) return info.supportedEffortLevels;
+    return info.supportsEffort ? efforts : [];
+  };
+
+  const save = () =>
+    act(s, async () => {
+      s.saved = false;
+      await request('PUT', '/api/settings', { settings, bufor: s.data.bufor });
+      s.saved = true;
+    });
+
+  // Przywraca tylko w formularzu — zapis nadal wymaga „Zapisz", więc pomyłka kosztuje odejście z ekranu.
+  const reset = () => {
+    for (const stage of Object.keys(settings)) settings[stage] = { ...s.data.defaults[stage] };
+    s.data.bufor = s.data.buforDefault;
+    s.saved = false;
+    render();
+  };
+
+  const row = (stage, i) => {
+    const current = settings[stage];
+    const levels = levelsFor(current.model);
+    // Model zapisany wcześniej, a dziś nieznany CLI, musi zostać widoczny — inaczej select
+    // pokazałby pierwszą pozycję i cicho podmienił ustawienie przy zapisie.
+    const unknown = current.model && !modelInfo(current.model);
+
+    return h('li', { className: 'stage-row deploy', style: `--i:${i}` }, [
+      h('span', { className: 'num', textContent: creaseCode(i) }),
+      h('div', { className: 'stage-name' }, [
+        h('strong', { textContent: t(`stage.${stage}`) }),
+        h('small', { className: 'muted', textContent: t(`stage.${stage}.hint`) }),
+      ]),
+      h(
+        'select',
+        {
+          className: 'model',
+          'aria-label': t('settings.model.for', { stage: t(`stage.${stage}`) }),
+          onchange: (e) => {
+            current.model = e.target.value || null;
+            if (!levelsFor(current.model).includes(current.effort)) current.effort = null;
+            s.saved = false;
+            render();
+          },
+        },
+        [
+          option('', t('settings.default'), current.model ?? ''),
+          ...(unknown ? [option(current.model, current.model, current.model)] : []),
+          ...models.map((m) => option(m.value, m.displayName || m.value, current.model ?? '')),
+        ],
+      ),
+      h(
+        'select',
+        {
+          className: 'effort',
+          disabled: levels.length === 0,
+          title: levels.length ? '' : t('settings.effort.unsupported'),
+          'aria-label': t('settings.effort.for', { stage: t(`stage.${stage}`) }),
+          onchange: (e) => {
+            current.effort = e.target.value || null;
+            s.saved = false;
+          },
+        },
+        [
+          option('', t('settings.default'), current.effort ?? ''),
+          ...levels.map((l) => option(l, t(`settings.effort.${l}`), current.effort ?? '')),
+        ],
+      ),
+    ]);
+  };
+
+  return h('section', {}, [
+    back(),
+    h('h1', { textContent: t('settings.title') }),
+    h('p', { className: 'muted intro', textContent: t('settings.intro') }),
+    s.error ? errorBox(s.error, 'settings.error') : null,
+    h('div', { className: 'stage-row' }, [
+      h('div', { className: 'stage-name' }, [
+        h('strong', { textContent: t('settings.buffer') }),
+        h('small', { className: 'muted', textContent: t('settings.buffer.hint') }),
+      ]),
+      h('input', {
+        type: 'number',
+        className: 'bufor',
+        min: '1',
+        max: String(s.data.buforMax ?? 20),
+        value: String(s.data.bufor),
+        'aria-label': t('settings.buffer'),
+        oninput: (e) => {
+          s.data.bufor = Number(e.target.value);
+          s.saved = false;
+        },
+      }),
+    ]),
+    h('ol', { className: 'stages' }, Object.keys(settings).map(row)),
+    h('div', { className: 'actions' }, [
+      h('button', {
+        className: 'primary',
+        disabled: !!s.busy,
+        textContent: s.busy ? t('app.loading') : t('settings.save'),
+        onclick: save,
+      }),
+      h('button', {
+        className: 'ghost',
+        disabled: !!s.busy,
+        textContent: t('settings.reset'),
+        onclick: reset,
+      }),
+      s.saved ? h('span', { className: 'muted', role: 'status', textContent: t('settings.saved') }) : null,
+    ]),
   ]);
 }
 
@@ -488,6 +936,8 @@ const ROUTES = [
   [/^#\/p\/([\w-]+)\/interview$/, screenInterview],
   [/^#\/p\/([\w-]+)\/plan$/, screenPlan],
   [/^#\/p\/([\w-]+)$/, screenProject],
+  [/^#\/p\/([\w-]+)\/l\/([\w-]+)$/, screenLesson],
+  [/^#\/ustawienia$/, screenSettings],
 ];
 
 // Każdy ekran to inne zagięcie tego samego arkusza — kod jest etykietą miejsca, nie danymi.
@@ -498,7 +948,11 @@ const sheetCode = (hash) =>
       ? 'V-02'
       : hash.endsWith('/plan')
         ? 'M-03'
-        : 'V-04';
+        : hash === '#/ustawienia'
+          ? 'M-05'
+          : hash.includes('/l/')
+            ? 'V-06'
+            : 'V-04';
 
 function headerNodes() {
   const other = LANGS.find((l) => l !== getLang());
@@ -521,6 +975,12 @@ function headerNodes() {
         'aria-label': t('app.lang.toggle'),
         onclick: () => setLang(other),
       }),
+      h('a', {
+        className: 'ghost',
+        href: '#/ustawienia',
+        textContent: t('app.settings'),
+        'aria-label': t('app.settings'),
+      }),
     ]),
   ];
 }
@@ -529,6 +989,7 @@ async function render() {
   const hash = location.hash || '#/';
   const fresh = hash !== route;
   if (fresh) {
+    state.es?.close(); // strumień postępu żyje tyle, co ekran, który go otworzył
     route = hash;
     state = {};
   }

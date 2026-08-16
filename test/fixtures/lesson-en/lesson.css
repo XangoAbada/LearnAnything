@@ -16,3 +16,13 @@
   letter-spacing: 0.1em;
   fill: var(--wiz-5);
 }
+
+/* Słupki alikwotów w demku manipulacji: chwyt musi być widoczny i dość duży pod palcem. */
+.slupek {
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.uchwyt {
+  cursor: grab;
+}

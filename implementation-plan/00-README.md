@@ -70,7 +70,7 @@ Dwie **niezależne** osie językowe:
 
 ## Zasady, których żadna faza nie może złamać
 
-1. **Nic nie powstaje samo z siebie.** Plan kursu i każda dodatkowa lekcja wymagają kliknięcia użytkownika. Żadna ścieżka w kodzie nie dopisuje lekcji do kolejki z własnej inicjatywy.
+1. **Nic nie powstaje samo z siebie.** Plan kursu i każda dodatkowa lekcja wymagają akcji użytkownika. Żadna ścieżka w kodzie nie dopisuje lekcji do kolejki z własnej inicjatywy. Bufor generowania (`store.readBuffer()`, domyślnie 3 lekcje z przodu) uzupełnia się wyłącznie na końcu żądania, które wywołał użytkownik: akceptacji planu albo oddania sprawdzianu.
 2. **Historia jest niezmienna.** Nowa lekcja nie może trafić przed ostatnią lekcję o statusie `ukończona`. Istniejące lekcje nigdy nie są przenumerowywane.
 3. **Spójność wymusza aplikacja, nie prompt.** Wygląd, wzorce dydaktyczne i logika sprawdzianu należą do `theme.css`, `runtime.js` i szablonu. Claude wypełnia sekcje.
 4. **Bez limitu prób oceny praktyki.** Żadnego licznika, blokady ani odliczania.

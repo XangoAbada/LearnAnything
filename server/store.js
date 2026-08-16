@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { projectsDir } from './config.js';
+import { config, projectsDir } from './config.js';
 
 // Jedyny moduł dotykający dysku. Wszystko synchronicznie: jeden użytkownik, pliki rzędu kilobajtów.
 
@@ -16,11 +16,16 @@ const writeJson = (file, value) => fs.writeFileSync(file, JSON.stringify(value, 
 
 // --- projekty ---------------------------------------------------------------
 
-export function listProjects() {
+export function projectIds() {
   return fs
     .readdirSync(projectsDir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
-    .map((e) => readProject(e.name))
+    .map((e) => e.name);
+}
+
+export function listProjects() {
+  return projectIds()
+    .map((id) => readProject(id))
     .filter(Boolean)
     .map((p) => {
       const lessons = readIndex(p.id);
@@ -85,6 +90,23 @@ export function updateLesson(id, lessonId, patch) {
   Object.assign(lesson, patch);
   writeIndex(id, lessons);
   return lesson;
+}
+
+/**
+ * Notatka ze słabym punktem po ocenie praktyki. Jeden wpis na ćwiczenie: kolejna ocena
+ * tego samego `exerciseId` nadpisuje poprzednią, a pusta notatka (odpowiedź `poprawnie`)
+ * kasuje wpis. Bez limitu prób lista puchłaby w nieskończoność, a notatki mają opisywać
+ * aktualne braki, nie historię.
+ * @returns {object} zaktualizowany wpis lekcji
+ */
+export function savePracticeNote(id, lessonId, exerciseId, note) {
+  const lesson = readIndex(id).find((l) => l.id === lessonId);
+  if (!lesson) throw new Error(`brak lekcji ${lessonId} w projekcie ${id}`);
+  const kept = (lesson.practiceNotes ?? []).filter((n) => n.exerciseId !== exerciseId);
+  const text = String(note ?? '').trim();
+  return updateLesson(id, lessonId, {
+    practiceNotes: text ? [...kept, { exerciseId, note: text }] : kept,
+  });
 }
 
 // --- numeracja i wstawianie (czyste funkcje, bez dysku) ---------------------
@@ -165,6 +187,18 @@ export function createLessonDir(projectId, lesson) {
   return dir;
 }
 
+/** Pusty katalog przed generowaniem: po padzie w połowie leżą tam pliki-niedopałki. */
+export function resetLessonDir(projectId, lesson) {
+  fs.rmSync(lessonDir(projectId, lesson), { recursive: true, force: true });
+  return createLessonDir(projectId, lesson);
+}
+
+/** Nazwy plików lekcji — generator sprawdza nimi, co model faktycznie napisał. */
+export function lessonFiles(projectId, lesson) {
+  const dir = lessonDir(projectId, lesson);
+  return fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [];
+}
+
 export function slugify(title, order) {
   const [whole, frac] = String(order).split('.');
   const prefix = whole.padStart(2, '0') + (frac ? `-${frac}` : '');
@@ -177,4 +211,85 @@ export function slugify(title, order) {
     .replace(/^-|-$/g, '')
     .slice(0, 60);
   return `${prefix}-${name || 'lekcja'}`;
+}
+
+// --- ustawienia modelu ------------------------------------------------------
+
+// Etapy aplikacji, które wołają model. Po polsku, bo to enum w danych — jak lesson.status.
+// „sugestie" to wyłącznie propozycja nowego wątku: powtórkę i rozwinięcie liczy czysta
+// funkcja z indeksu, bez modelu.
+export const STAGES = ['wywiad-pytania', 'wywiad-ocena', 'plan', 'lekcja', 'praktyka', 'sugestie'];
+
+export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
+
+// Domyślne dobrane do ciężaru zadania: krótka lista pytań nie potrzebuje opusa,
+// plan kursu i lekcja tak. null przy haiku, bo ten model nie przyjmuje effort.
+export const DEFAULT_SETTINGS = {
+  'wywiad-pytania': { model: 'haiku', effort: null },
+  'wywiad-ocena': { model: 'sonnet', effort: 'medium' },
+  'plan': { model: 'opus', effort: 'high' },
+  'lekcja': { model: 'opus', effort: 'high' },
+  'praktyka': { model: 'sonnet', effort: 'high' },
+  'sugestie': { model: 'sonnet', effort: 'low' },
+};
+
+const settingsFile = () => path.join(config.dataDir, 'settings.json');
+
+/** @returns {Record<string, {model: string|null, effort: string|null}>} komplet etapów */
+export function readSettings() {
+  const saved = readJson(settingsFile(), {});
+  return Object.fromEntries(
+    STAGES.map((stage) => [stage, { ...DEFAULT_SETTINGS[stage], ...(saved[stage] ?? {}) }]),
+  );
+}
+
+/**
+ * Model NIE jest sprawdzany przeciwko liście z SDK — ta bywa niedostępna, a zła nazwa
+ * i tak wyjdzie błędem Claude'a. Sprawdzamy to, co znamy na pewno: etapy i poziomy.
+ * @throws przy nieznanym etapie albo poziomie
+ */
+export function writeSettings(settings) {
+  if (!settings || typeof settings !== 'object') throw new Error('ustawienia muszą być obiektem');
+  for (const [stage, value] of Object.entries(settings)) {
+    if (!STAGES.includes(stage)) throw new Error(`nieznany etap: ${stage}`);
+    const { model = null, effort = null } = value ?? {};
+    if (model !== null && !String(model).trim()) throw new Error(`${stage}: pusta nazwa modelu`);
+    if (effort !== null && !EFFORTS.includes(effort)) {
+      throw new Error(`${stage}: nieznany poziom rozumowania "${effort}"`);
+    }
+  }
+  // Etap pominięty w żądaniu zostaje jak był — PUT z jednym etapem nie kasuje reszty.
+  const current = readSettings();
+  const full = Object.fromEntries(
+    STAGES.map((stage) => {
+      if (!(stage in settings)) return [stage, current[stage]];
+      const { model = null, effort = null } = settings[stage] ?? {};
+      return [stage, { model: model === null ? null : String(model).trim(), effort }];
+    }),
+  );
+  // Spread zachowuje klucze spoza STAGES (bufor) — zapis modeli nie ma ich kasować.
+  writeJson(settingsFile(), { ...readJson(settingsFile(), {}), ...full });
+  return full;
+}
+
+// --- bufor generowania ------------------------------------------------------
+
+// Ile lekcji trzymamy wygenerowanych z przodu. Nie jest etapem, więc siedzi w tym samym
+// pliku obok etapów, pod własnym kluczem — schemat etapów zostaje nietknięty.
+export const DEFAULT_BUFFER = 3;
+export const BUFFER_MAX = 20;
+
+const validBuffer = (n) => Number.isInteger(n) && n >= 1 && n <= BUFFER_MAX;
+
+/** @returns {number} */
+export function readBuffer() {
+  const n = readJson(settingsFile(), {}).bufor;
+  return validBuffer(n) ? n : DEFAULT_BUFFER;
+}
+
+/** @throws przy wartości spoza 1–BUFFER_MAX */
+export function writeBuffer(n) {
+  if (!validBuffer(n)) throw new Error(`bufor musi być liczbą całkowitą 1–${BUFFER_MAX}`);
+  writeJson(settingsFile(), { ...readJson(settingsFile(), {}), bufor: n });
+  return n;
 }

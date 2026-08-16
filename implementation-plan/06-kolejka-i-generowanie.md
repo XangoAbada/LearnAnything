@@ -24,6 +24,8 @@ Po tej fazie aplikacja **działa end-to-end**: temat → wywiad → plan → wyg
 
 ```js
 export function enqueue(projectId, lessonId)
+export function enqueueNext(projectId)     // -> lesson|null ; jedna kolejna z planu
+export function topUp(projectId)          // -> number ; dociąga do bufora z ustawień
 export function startWorker()            // odpala pętlę, jeśli nie chodzi
 export function recoverOnBoot()          // po restarcie: 'generowana' → 'zaplanowana'
 export function queueState(projectId)    // -> { running: lessonId|null, waiting: [...] }
@@ -35,7 +37,9 @@ Zasady:
 - stan trwały w `project.queue`; kolejka w pamięci to tylko pętla;
 - **pierwsza lekcja ma priorytet** — wynika z sortowania po `order`, nie z osobnego mechanizmu;
 - porażka → `status: "błąd"`, `error` w wpisie lekcji, **kolejka idzie dalej**;
-- kolejka rusza **wyłącznie** z akcji użytkownika: akceptacja planu (03) albo dodanie lekcji (10). Żadnego samoczynnego dokładania.
+- kolejka rusza **wyłącznie** z akcji użytkownika: akceptacja planu (03), oddanie sprawdzianu, „Generuj następną” albo dodanie lekcji (10). Żadnego samoczynnego dokładania;
+- kurs **nie idzie do kolejki w całości**: `topUp(projectId)` dokłada lekcje, aż zapas (gotowe + czekające, bez lekcji z `błąd`) sięgnie bufora z ustawień; `enqueueNext(projectId)` dokłada jedną z ręki użytkownika i zwraca `null`, gdy nie ma już `zaplanowanych`;
+- `status: "gotowy"` należy się projektowi dopiero, gdy kolejka jest pusta **i** nie została żadna lekcja `zaplanowana`.
 
 Recovery po restarcie: każda lekcja `generowana` wraca do `zaplanowana` i do kolejki (proces zginął w połowie — pliki mogą być niekompletne, generujemy od nowa).
 
