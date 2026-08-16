@@ -381,9 +381,13 @@ Ta sama sylwetka co panel, ale wszystkie cztery krawędzie i przekątna są w `-
 
 Klasa `.deploy` z indeksem podanym jako `--i`: `rotateX(-74deg)` z `perspective(800px)` i `transform-origin: top center` do zera, `340ms`, `cubic-bezier(0.16, 0.84, 0.28, 1)`, opóźnienie `45ms × --i`. Panele pakietów, wiersze planu i pozycje listy lekcji rozkładają się kolejno od górnej krawędzi — jedno pociągnięcie, po którym arkusz jest rozłożony. Poza tym w systemie są tylko przejścia stanów `180ms` (`--step`). Reguła `prefers-reduced-motion: reduce` wyłącza w powłoce każdą animację i każde przejście.
 
-### Warstwa lekcji (kontrakt otwarty — jeszcze nie zaimplementowana)
+### Warstwa lekcji
 
-Faza 05 z `implementation-plan/` kontraktuje szablon lekcji z ustalonymi raz i niezmiennymi nazwami klas (`.pojecie`, `.diagram`, `.demko`, `.mikro-pytanie`, `.cwiczenie`, `.sprawdzian`, `.sugestie`) oraz osobnymi zmiennymi wizualizacji (`--wiz-1`…`--wiz-5`, `--wiz-siatka`, `--wiz-podswietlenie`), czytanymi przez Canvas funkcją `czytajZmienna()`. **W kodzie tego nie ma.** To zapisany kontrakt, nie komponent tego systemu — kiedy powstanie, dziedziczy sylwetkę ścięcia, dwa rejestry typograficzne i regułę jednego źródła koloru, a swoje zmienne dokłada do obu motywów w `theme.css`.
+Szablon lekcji stoi na ustalonych raz i niezmiennych nazwach klas (`.pojecie`, `.diagram`, `.demko`, `.mikro-pytanie`, `.cwiczenie`, `.sprawdzian`, `.sugestie`) oraz osobnych zmiennych wizualizacji (`--wiz-1`…`--wiz-5`, `--wiz-siatka`, `--wiz-podswietlenie`), czytanych przez Canvas funkcją `czytajZmienna()`. Warstwa jest zawężona do `body[data-lesson]`, więc nie wycieka do powłoki, która ładuje ten sam `theme.css`.
+
+Wizualizacje pochodzą z biblioteki `public/komponenty/` — jeden plik na komponent, style wstrzykiwane z `export const style`, każdy selektor pod przedrostkiem `.k-<nazwa>`. Biblioteka dziedziczy sylwetkę ścięcia, dwa rejestry typograficzne i **regułę jednego źródła koloru**: w komponencie nie ma prawa paść żaden literał koloru, wyłącznie zmienne motywu. Egzekwuje to test, nie dobra wola.
+
+**Reguła tekstu poza SVG.** Napisy renderują się w HTML. `<text>` nie zawija się i przy dłuższych danych wychodzi poza `viewBox` — SVG zostaje do geometrii, a napisy w nim mają być krótkie i mieścić się w kadrze przy każdej próbce. Pilnuje tego kontrola w przeglądarce (`npm run sprawdz`), a nie zapis w tym dokumencie.
 
 ## Do's and Don'ts
 

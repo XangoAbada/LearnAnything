@@ -51,6 +51,7 @@ const texts = {
     restartPytanie:
       'Zacząć tę lekcję od nowa? Odsłonięte odpowiedzi, wpisany kod i sprawdzian znikną. Wynik sprawdzianu w kursie zostaje.',
     anuluj: 'Anuluj',
+    bladKomponentu: 'Nie udało się wczytać wizualizacji „{nazwa}”.',
   },
   en: {
     show: 'Show answer',
@@ -91,6 +92,7 @@ const texts = {
     restartPytanie:
       'Start this lesson over? Revealed answers, typed code and the quiz will be gone. The saved course score stays.',
     anuluj: 'Cancel',
+    bladKomponentu: 'Could not load the “{nazwa}” visualisation.',
   },
 };
 
@@ -938,6 +940,105 @@ export function demoKod({ el: cel, id, jezyk = 'js', kodStartowy = '', opis = ''
   });
 }
 
+// --- 5. rejestr komponentów ---------------------------------------------------
+// Biblioteka rysunków w public/komponenty/. Lekcja podaje nazwę i dane, nigdy własny SVG:
+// tekst na sztywnych współrzędnych wyjeżdża poza viewBox, gdy dane są dłuższe niż w przykładzie.
+// Powłoki wyżej (parametry/kroki/manipulacja/kod) zostają — komponent dostarcza samo rysowanie.
+
+const STALY = 'staly';
+const NAZWA_KOMPONENTU = /^[a-z][a-z0-9-]{2,31}$/;
+const moduly = new Map();
+
+/**
+ * Komponent ładowany dopiero przy użyciu. Manifest z góry kosztowałby tyle żądań,
+ * ile jest komponentów w bibliotece — a lekcja używa kilku.
+ */
+function zaladujKomponent(nazwa) {
+  if (!NAZWA_KOMPONENTU.test(nazwa)) return Promise.reject(new Error(`komponent: zła nazwa ${nazwa}`));
+  if (!moduly.has(nazwa)) moduly.set(nazwa, import(`/komponenty/${nazwa}.js`));
+  return moduly.get(nazwa);
+}
+
+/** Style komponentu wjeżdżają raz na dokument — plik komponentu jest jeden, więc CSS jedzie w nim. */
+function wstrzyknijStyl(nazwa, tresc) {
+  if (!tresc || document.querySelector(`style[data-k="${nazwa}"]`)) return;
+  document.head.append(el('style', { textContent: tresc, 'data-k': nazwa }));
+}
+
+/** Tryb z kształtu opcji — lekcja podaje go jawnie tylko wtedy, gdy chce czegoś innego. */
+const wykryjTryb = (o) =>
+  o.kontrolki ? 'parametry'
+  : o.kroki ? 'kroki'
+  : o.elementy ? 'manipulacja'
+  : o.jezyk || o.kodStartowy ? 'kod'
+  : STALY;
+
+/** Statyczny widok: bez panelu, ale z rejestracją — przerysowanie po zmianie motywu za darmo. */
+function demoStaly({ el: cel, id, rysuj, opis }) {
+  const { host, klucz } = ramka(cel, id, STALY);
+  const rysunek = plotno();
+  const przerysuj = () => rysuj(rysunek);
+  dolacz(host, [opisDemka(opis), rysunek]);
+  przerysuj();
+  return zarejestruj(klucz, { typ: STALY, przerysuj, reset: () => {}, przywroc: () => {}, stan: () => ({}) });
+}
+
+const powloki = {
+  [STALY]: demoStaly,
+  parametry: demoParametry,
+  kroki: demoKroki,
+  manipulacja: demoManipulacja,
+  kod: demoKod,
+};
+
+/**
+ * Dane dla komponentu przy bieżącym stanie panelu. Funkcja, gdy lekcja przelicza stan na dane
+ * (suwaki); płytkie scalenie, gdy stan sam niesie pola komponentu (kroki).
+ */
+const daneZ = (dane, stan) =>
+  typeof dane === 'function' ? (dane(stan) ?? {}) : { ...dane, ...stan };
+
+// Każda powłoka woła `rysuj` z innym drugim argumentem; komponent zawsze dostaje (cel, dane, ctx).
+const adaptery = {
+  [STALY]: (r, dane) => (cel) => r(cel, daneZ(dane), kontekst({})),
+  parametry: (r, dane) => (cel, wartosci) => r(cel, daneZ(dane, wartosci), kontekst({ wartosci })),
+  kroki: (r, dane) => (cel, krok, indeks) => r(cel, daneZ(dane, krok), kontekst({ krok, indeks })),
+  manipulacja: (r, dane) => (cel, elementy) => r(cel, daneZ(dane, { elementy }), kontekst({ elementy })),
+};
+
+// Helpery wstrzykiwane, nie importowane: komponent z `import '../runtime.js'` dostałby
+// drugą instancję modułu (inny URL = inny moduł), czyli drugie window.LA i podwójny initChowane.
+const kontekst = (dodatki) => ({ tl, czytajZmienna, el, ...dodatki });
+
+/**
+ * Jedyne wejście lekcji do wizualizacji: `LA.komponent({ el, id, nazwa, dane, tryb, … })`.
+ * Zwraca Promise wpisu rejestru. Bez `nazwa` (lekcje sprzed biblioteki) montuje synchronicznie.
+ */
+export function komponent(opcje = {}) {
+  const tryb = opcje.tryb ?? wykryjTryb(opcje);
+  const powloka = powloki[tryb];
+  if (!powloka) return Promise.reject(new Error(`komponent: nieznany tryb ${tryb}`));
+  if (!opcje.nazwa) return Promise.resolve(powloka(opcje));
+
+  return zaladujKomponent(opcje.nazwa).then(
+    (modul) => {
+      wstrzyknijStyl(opcje.nazwa, modul.style);
+      const adapter = adaptery[tryb];
+      const rysuj = adapter ? adapter(modul.rysuj, opcje.dane ?? {}) : opcje.rysuj;
+      return powloka({ ...opcje, rysuj });
+    },
+    (err) => bladKomponentu(opcje, err),
+  );
+}
+
+/** Brakujący albo popsuty komponent zostawia ślad w lekcji i nigdy nie rzuca — reszta ma działać. */
+function bladKomponentu(opcje, err) {
+  console.error('komponent', opcje.nazwa, err);
+  const host = typeof opcje.el === 'string' ? document.querySelector(opcje.el) : opcje.el;
+  host?.append(el('p', { className: 'blad-komponentu', textContent: tl('bladKomponentu', { nazwa: opcje.nazwa }) }));
+  return null;
+}
+
 /** „Zacznij od nowa": czyści stan tej jednej lekcji. Wynik w index.json zostaje nietknięty. */
 function dodajRestart() {
   const naglowek = document.querySelector('.lekcja-naglowek');
@@ -989,10 +1090,12 @@ if (typeof document !== 'undefined') {
     tl,
     ocenSprawdzian,
     wyslijWynik,
-    demoParametry,
-    demoKroki,
-    demoManipulacja,
-    demoKod,
+    komponent,
+    // ponytail: aliasy dla lekcji sprzed biblioteki — usunąć, gdy stare kursy znikną.
+    demoParametry: (o) => komponent({ ...o, tryb: 'parametry' }),
+    demoKroki: (o) => komponent({ ...o, tryb: 'kroki' }),
+    demoManipulacja: (o) => komponent({ ...o, tryb: 'manipulacja' }),
+    demoKod: (o) => komponent({ ...o, tryb: 'kod' }),
     demka,
     stan,
   };

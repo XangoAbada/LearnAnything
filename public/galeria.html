@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  Galeria komponentów: podgląd biblioteki dla człowieka i harness dla scripts/sprawdz-komponenty.js.
+  data-lesson musi zostać — cała warstwa lekcji w theme.css jest zawężona do body[data-lesson],
+  więc bez tego komponent testowałby się w innym środowisku, niż w którym działa.
+  Parametry: ?k=nazwa[,nazwa] · &motyw=jasny|ciemny · &lang=pl|en
+-->
+<html lang="pl" data-theme="jasny">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Galeria komponentów</title>
+    <link rel="stylesheet" href="/theme.css" />
+    <style>
+      body[data-lesson] .galeria-naglowek {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 1rem;
+        align-items: baseline;
+        margin-bottom: 0.4rem;
+      }
+      body[data-lesson] .galeria-naglowek code {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      body[data-lesson] .galeria-probka {
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 0.3rem;
+      }
+    </style>
+  </head>
+  <body data-project="galeria" data-lesson="galeria" data-lang="pl">
+    <header class="lekcja-naglowek"><h1>Galeria komponentów</h1></header>
+    <section id="teoria"></section>
+    <script type="module" src="/runtime.js"></script>
+    <script type="module">
+      const parametry = new URLSearchParams(location.search);
+      const motyw = parametry.get('motyw');
+      if (motyw) document.documentElement.dataset.theme = motyw;
+      if (parametry.get('lang')) document.body.dataset.lang = parametry.get('lang');
+
+      const cel = document.querySelector('#teoria');
+
+      async function nazwy() {
+        const zParametru = parametry.get('k');
+        if (zParametru) return zParametru.split(',').filter(Boolean);
+        // Bez ?k= galeria jest dla człowieka; skrypt sprawdzający zawsze podaje listę wprost,
+        // bo chodzi na gołym express.static, bez API.
+        const res = await fetch('/api/komponenty');
+        if (!res.ok) throw new Error(`/api/komponenty: ${res.status}`);
+        return (await res.json()).map((k) => k.nazwa);
+      }
+
+      async function pokaz(nazwa) {
+        const modul = await import(`/komponenty/${nazwa}.js`);
+        const sekcja = document.createElement('section');
+        sekcja.className = 'pojecie';
+        sekcja.innerHTML = `<div class="galeria-naglowek"><h3>${nazwa}</h3><code>${modul.meta?.dane ?? ''}</code></div>
+          <p>${modul.meta?.opis ?? ''}</p>`;
+        cel.append(sekcja);
+
+        for (const probka of modul.probki ?? []) {
+          const id = `k-${nazwa}-${probka.nazwa.replace(/\W+/g, '-')}`;
+          const podpis = document.createElement('p');
+          podpis.className = 'galeria-probka';
+          podpis.textContent = probka.nazwa;
+          const host = document.createElement('section');
+          host.id = id;
+          sekcja.append(podpis, host);
+          await LA.komponent({ el: host, id, nazwa, dane: probka.dane, tryb: 'staly' });
+        }
+      }
+
+      try {
+        for (const nazwa of await nazwy()) await pokaz(nazwa);
+        document.body.dataset.gotowe = '1';
+      } catch (err) {
+        cel.append(Object.assign(document.createElement('p'), { textContent: String(err) }));
+        document.body.dataset.blad = String(err);
+      }
+    </script>
+  </body>
+</html>

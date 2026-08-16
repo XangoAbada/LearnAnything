@@ -1,6 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { runClaude, runClaudeJson, extractLastJsonBlock } from './claude.js';
 import { loadPrompt, loadPart, lessonTemplate } from './prompts.js';
+import { katalogTekst, komponentyDir, nazwyKomponentow, NAZWA as NAZWA_KOMPONENTU } from './komponenty.js';
 import * as store from './store.js';
+// Sam raport i lista twardych reguł; playwright wciąga się dopiero w osobnym procesie.
+import { raport as raportKontroli, TWARDE } from '../scripts/sprawdz-komponenty.js';
 
 // Zadania modelu: wywiad, plan, lekcja. Nie zna HTTP i nie dotyka dysku sam — katalog lekcji
 // dostaje ze store'a. Ostatni argument `run` istnieje po to, żeby testy zaślepiły model.
@@ -206,6 +214,105 @@ const progressReporter = (onProgress) => {
   };
 };
 
+// --- biblioteka komponentów ---------------------------------------------------
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const sprawdzarka = path.join(here, '..', 'scripts', 'sprawdz-komponenty.js');
+const execFileP = promisify(execFile);
+
+/** Najwyżej tyle zamówień na lekcję — każde to osobne wywołanie modelu plus przeglądarka. */
+export const MAX_KOMPONENTOW = 3;
+/** Po pierwszym podejściu tyle rund z raportem błędów. Trzy wywołania sonneta, nie opusa. */
+export const RUNDY_NAPRAWCZE = 2;
+
+/**
+ * Kontrola wizualna w osobnym procesie: przeglądarka nie ma prawa wisieć w serwerze.
+ * Skrypt kończy się kodem 1 przy twardych usterkach — to nie jest awaria, tylko wynik.
+ */
+async function kontrolaProcesem(args) {
+  try {
+    const { stdout } = await execFileP(process.execPath, [sprawdzarka, '--json', ...args], {
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    return JSON.parse(stdout);
+  } catch (err) {
+    if (err.stdout) {
+      try {
+        return JSON.parse(err.stdout);
+      } catch {}
+    }
+    // Brak przeglądarki nie może zablokować kursu — bez kontroli lekcja przechodzi dalej.
+    console.warn(`kontrola wizualna pominięta: ${err.message.split('\n')[0]}`);
+    return [];
+  }
+}
+
+export const sprawdzKomponent = (nazwa, kandydat) => kontrolaProcesem([nazwa, '--kandydat', kandydat]);
+export const sprawdzLekcje = (dir) => kontrolaProcesem(['--lekcja', dir]);
+
+/** Zamówienia z bloku JSON lekcji: tylko nowe nazwy, tylko poprawne, najwyżej trzy. */
+export function zamowienia(dane, istniejace) {
+  const lista = Array.isArray(dane?.komponenty) ? dane.komponenty : [];
+  const widziane = new Set(istniejace);
+  const dobre = [];
+  for (const spec of lista) {
+    const nazwa = String(spec?.nazwa ?? '').trim();
+    if (!NAZWA_KOMPONENTU.test(nazwa) || widziane.has(nazwa)) continue;
+    widziane.add(nazwa);
+    dobre.push({ ...spec, nazwa });
+  }
+  if (dobre.length > MAX_KOMPONENTOW) {
+    console.warn(`lekcja zamówiła ${dobre.length} komponentów — biorę pierwsze ${MAX_KOMPONENTOW}`);
+  }
+  return dobre.slice(0, MAX_KOMPONENTOW);
+}
+
+const specTekst = (spec) =>
+  [
+    `- nazwa: \`${spec.nazwa}\``,
+    `- co ma rysować: ${spec.opis || '(bez opisu — wyprowadź z nazwy)'}`,
+    `- kształt danych: ${spec.dane || '(zaprojektuj sam)'}`,
+    `- próbki do przygotowania: ${(Array.isArray(spec.probki) ? spec.probki : []).join(', ') || 'typowa, wrogie dane'}`,
+  ].join('\n');
+
+/**
+ * Jedno zamówienie: napisz → sprawdź w przeglądarce → popraw. Do biblioteki wchodzi
+ * wyłącznie komponent bez usterek; nieudany zostawia raport, którym łatana jest lekcja.
+ * @returns {Promise<{nazwa: string, ok: boolean, raport?: string}>}
+ */
+export async function zbudujKomponent(spec, language, run = runClaude, kontrola = sprawdzKomponent) {
+  const dir = store.tempKomponentDir(spec.nazwa);
+  let raport = '(pierwsze podejście)';
+  try {
+    for (let runda = 0; runda <= RUNDY_NAPRAWCZE; runda++) {
+      await run({
+        stage: 'komponent',
+        prompt: loadPrompt('komponent', { language, nazwa: spec.nazwa, spec: specTekst(spec), raport }),
+        cwd: dir,
+        allowedTools: ['Write', 'Read'],
+        maxTurns: 12,
+        timeoutMs: 5 * 60_000,
+        additionalDirectories: [komponentyDir],
+      });
+
+      const plik = path.join(dir, `${spec.nazwa}.js`);
+      if (!fs.existsSync(plik)) {
+        raport = `Nie powstał plik \`${spec.nazwa}.js\` w katalogu roboczym.`;
+        continue;
+      }
+      const findings = await kontrola(spec.nazwa, dir);
+      if (!findings.length) {
+        store.zapiszKomponent(spec.nazwa, plik);
+        return { nazwa: spec.nazwa, ok: true };
+      }
+      raport = raportKontroli(findings);
+    }
+    return { nazwa: spec.nazwa, ok: false, raport };
+  } finally {
+    store.usunKatalog(dir);
+  }
+}
+
 /**
  * Pisze pliki lekcji na dysk przez Claude'a i zwraca opis tego, co powstało.
  * @param {object} project
@@ -214,9 +321,17 @@ const progressReporter = (onProgress) => {
  * @param {Function} [run] zaślepka modelu dla testów
  * @param {(p: {turn: number, files: string[], total: number}) => void} [onProgress] podgląd postępu;
  *   piąty argument, bo `run` jest czwartym od dawna i tak wołają go wszystkie testy
+ * @param {object} [kontrola] zaślepki kontroli wizualnej — testy nie startują przeglądarki
  * @returns {Promise<{summary: string, covers: string[]}>}
  */
-export async function generateLesson(project, lesson, index = [], run = runClaude, onProgress) {
+export async function generateLesson(
+  project,
+  lesson,
+  index = [],
+  run = runClaude,
+  onProgress,
+  kontrola = { komponent: sprawdzKomponent, lekcja: sprawdzLekcje },
+) {
   const previous = index.filter((l) => l.order < lesson.order);
   const revision = [...new Set(previous.flatMap((l) => l.covers ?? []))];
   const shape = PACE_SHAPE[project.course.pace] ?? PACE_SHAPE.normalne;
@@ -248,19 +363,26 @@ export async function generateLesson(project, lesson, index = [], run = runClaud
     revisionQuestions,
     extend: extendContext(lesson, index),
     skeleton,
+    komponenty: await katalogTekst(),
   });
 
   // Pusty katalog przed startem: po nieudanej próbie leżą tam pliki-niedopałki.
   const cwd = store.resetLessonDir(project.id, lesson);
+  // Biblioteka jest widoczna, żeby model doczytał źródło komponentu, ale ma pozostać nietknięta.
+  const odcisk = store.komponentySnapshot();
   const text = await run({
     stage: 'lekcja',
     prompt,
     cwd,
     allowedTools: ['Write', 'Read'],
+    additionalDirectories: [komponentyDir],
     maxTurns: 30, // trzy pliki plus poprawki — z zapasem
     timeoutMs: 20 * 60_000, // lekcja liczy się w minutach, nie sekundach
     ...(onProgress ? { onMessage: progressReporter(onProgress) } : {}),
   });
+  if (store.komponentySnapshot() !== odcisk) {
+    throw modelError('lekcja: biblioteka komponentów została zmieniona poza kontrolą');
+  }
 
   // cwd bez additionalDirectories to granica zapisu; to jest jej sprawdzenie po fakcie.
   const files = store.lessonFiles(project.id, lesson);
@@ -280,7 +402,54 @@ export async function generateLesson(project, lesson, index = [], run = runClaud
   // Bez tego kolejne lekcje dublują materiał — cichy zapis pustych pól psuje kurs za trzy lekcje.
   if (!summary || !covers.length) throw modelError('lekcja: odpowiedź bez summary albo covers');
 
-  return { summary, covers };
+  // Zamówione komponenty powstają po lekcji, tanim etapem: pełne ponowienie to opus i 20 minut.
+  const nieudane = [];
+  for (const spec of zamowienia(data, nazwyKomponentow())) {
+    const wynik = await zbudujKomponent(spec, project.language, run, kontrola.komponent);
+    if (!wynik.ok) nieudane.push(`Komponent \`${wynik.nazwa}\` nie powstał:\n${wynik.raport}`);
+  }
+
+  const usterki = await kontrola.lekcja(cwd);
+  const twarde = usterki.filter((f) => TWARDE.includes(f.regula));
+  const miekkie = usterki.filter((f) => !TWARDE.includes(f.regula));
+  if (miekkie.length) console.warn(`lekcja ${lesson.id}: drobne usterki wizualne\n${raportKontroli(miekkie)}`);
+
+  if (!nieudane.length && !twarde.length) return { summary, covers };
+
+  // Jedno tanie łatanie zamiast ponowienia całej lekcji — kolejka i tak nie poda modelowi powodu.
+  return await zalatajLekcje({ project, lesson, cwd, summary, covers, run, kontrola, nieudane, twarde });
+}
+
+/** Ostatnia szansa lekcji: sonnet poprawia sposób pokazania treści, nie sam materiał. */
+async function zalatajLekcje({ project, lesson, cwd, summary, covers, run, kontrola, nieudane, twarde }) {
+  const text = await run({
+    stage: 'komponent',
+    prompt: loadPrompt('lesson-poprawka', {
+      language: project.language,
+      raport: [...nieudane, twarde.length ? raportKontroli(twarde) : ''].filter(Boolean).join('\n\n'),
+      komponenty: await katalogTekst(),
+    }),
+    cwd,
+    allowedTools: ['Read', 'Write'],
+    maxTurns: 6,
+    timeoutMs: 5 * 60_000,
+  });
+
+  const files = store.lessonFiles(project.id, lesson);
+  if (LESSON_FILES.some((f) => !files.includes(f)) || files.some((f) => !LESSON_FILES.includes(f))) {
+    throw modelError('lekcja: poprawka zostawiła złe pliki w katalogu');
+  }
+  const nadal = (await kontrola.lekcja(cwd)).filter((f) => TWARDE.includes(f.regula));
+  if (nadal.length) throw modelError(`lekcja: kontrola wizualna nie przeszła\n${raportKontroli(nadal)}`);
+
+  // Poprawka mogła przepisać wizualizacje, ale materiał zostaje — summary/covers z pierwszego przejścia
+  // obowiązują, chyba że model odesłał świeże.
+  const data = extractLastJsonBlock(text) ?? {};
+  const noweCovers = (Array.isArray(data.covers) ? data.covers : []).map((c) => String(c).trim()).filter(Boolean);
+  return {
+    summary: String(data.summary ?? '').trim() || summary,
+    covers: noweCovers.length ? noweCovers : covers,
+  };
 }
 
 // --- ocena praktyki ---------------------------------------------------------

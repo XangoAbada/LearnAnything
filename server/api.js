@@ -4,6 +4,7 @@ import * as generator from './generator.js';
 import * as queue from './queue.js';
 import { computeSuggestions } from './suggestions.js';
 import { availableModels } from './claude.js';
+import { katalog } from './komponenty.js';
 
 // Trasy REST. Cała wiedza o modelu siedzi w generator.js, cała o dysku w store.js.
 
@@ -293,6 +294,11 @@ api.get('/projects/:id/events', (req, res) => {
 
 // Strumień pulpitu: wszystkie projekty naraz, każde zdarzenie z `projectId` w danych.
 api.get('/events', (req, res) => subscribe(WSZYSTKIE, req, res));
+
+// --- biblioteka komponentów --------------------------------------------------
+
+// Dla galerii. Prompt lekcji bierze ten sam katalog przez generator, nie przez HTTP.
+api.get('/komponenty', async (req, res) => res.json(await katalog()));
 
 // --- ustawienia modelu ------------------------------------------------------
 

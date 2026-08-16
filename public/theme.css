@@ -469,6 +469,9 @@ body[data-lesson] {
     max-width: 100%;
     height: auto;
     margin: 0 auto;
+    /* Tekst poza viewBox ma być widoczny, a nie ucięty na krawędzi — ratunek dla lekcji
+       sprzed biblioteki komponentów; rodzic i tak przewija w poziomie. */
+    overflow: visible;
   }
 
   & .diagram figcaption {
@@ -671,6 +674,15 @@ body[data-lesson] {
 
   & .blad-oceny {
     margin: 0.8rem 0 0;
+    font-size: 0.85rem;
+    color: var(--warn);
+  }
+
+  /* Brakujący komponent zostawia ślad zamiast pustki — reszta lekcji ma działać dalej. */
+  & .blad-komponentu {
+    margin: 0;
+    padding: 0.7rem 0.8rem;
+    border: 1px dashed var(--border);
     font-size: 0.85rem;
     color: var(--warn);
   }

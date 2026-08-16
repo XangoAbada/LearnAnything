@@ -1,7 +1,9 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { config, projectsDir } from './config.js';
+import { komponentyDir } from './komponenty.js';
 
 // Jedyny moduł dotykający dysku. Wszystko synchronicznie: jeden użytkownik, pliki rzędu kilobajtów.
 
@@ -215,12 +217,58 @@ export function slugify(title, order) {
   return `${prefix}-${name || 'lekcja'}`;
 }
 
+// --- biblioteka komponentów --------------------------------------------------
+
+/** Katalog roboczy na komponent w budowie. Poza `data/`, bo to nie są dane użytkownika. */
+export function tempKomponentDir(nazwa) {
+  const dir = path.join(os.tmpdir(), `learnanything-komponent-${nazwa}-${randomUUID().slice(0, 8)}`);
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/**
+ * Odcisk biblioteki: nazwa, rozmiar i czas zapisu każdego pliku. SDK nie zna katalogu
+ * dodatkowego „tylko do odczytu", więc jedyne, co pilnuje biblioteki przed lekcją piszącą
+ * po niej bez weryfikacji, to porównanie tego odcisku przed i po.
+ */
+export function komponentySnapshot() {
+  if (!fs.existsSync(komponentyDir)) return '';
+  return fs
+    .readdirSync(komponentyDir)
+    .sort()
+    .map((f) => {
+      const st = fs.statSync(path.join(komponentyDir, f));
+      return `${f}:${st.size}:${st.mtimeMs}`;
+    })
+    .join('|');
+}
+
+/** Sprzątanie po katalogu roboczym — dysk należy do store, także ten tymczasowy. */
+export const usunKatalog = (dir) => fs.rmSync(dir, { recursive: true, force: true });
+
+/** Zatwierdzony komponent wchodzi do biblioteki. Wołane dopiero po kontroli w przeglądarce. */
+export function zapiszKomponent(nazwa, zrodlo) {
+  fs.mkdirSync(komponentyDir, { recursive: true });
+  const cel = path.join(komponentyDir, `${nazwa}.js`);
+  fs.copyFileSync(zrodlo, cel);
+  return cel;
+}
+
 // --- ustawienia modelu ------------------------------------------------------
 
 // Etapy aplikacji, które wołają model. Po polsku, bo to enum w danych — jak lesson.status.
 // „sugestie" to wyłącznie propozycja nowego wątku: powtórkę i rozwinięcie liczy czysta
 // funkcja z indeksu, bez modelu.
-export const STAGES = ['wywiad-pytania', 'wywiad-ocena', 'plan', 'lekcja', 'praktyka', 'sugestie'];
+export const STAGES = [
+  'wywiad-pytania',
+  'wywiad-ocena',
+  'plan',
+  'lekcja',
+  'komponent',
+  'praktyka',
+  'sugestie',
+];
 
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -231,6 +279,7 @@ export const DEFAULT_SETTINGS = {
   'wywiad-ocena': { model: 'sonnet', effort: 'medium' },
   'plan': { model: 'opus', effort: 'high' },
   'lekcja': { model: 'opus', effort: 'high' },
+  'komponent': { model: 'sonnet', effort: 'high' },
   'praktyka': { model: 'sonnet', effort: 'high' },
   'sugestie': { model: 'sonnet', effort: 'low' },
 };

@@ -23,6 +23,7 @@ Ten katalog odpowiada tylko za „w jakiej kolejności" i „skąd wiadomo, że 
 | 10 | `10-rozbudowa-i-propozycje.md` | dodawanie lekcji, propozycje z wyników | lekcja `4.1` wstawiona, nic nie kolejkuje się samo |
 | 11 | `11-eksport-pdf.md` | `print.css`, strony wydruku | „Zapisz jako PDF" daje czytelny dokument |
 | 12 | `12-domkniecie.md` | komplet testów, audyt i18n, README aplikacji | projekt zamknięty wobec bazy wiedzy |
+| 13 | `13-biblioteka-komponentow.md` | biblioteka wizualizacji, kontrola w przeglądarce, zamawianie nowych | model nie rysuje sam, biblioteka rośnie z każdym kursem |
 
 ## Ustalenia nowsze niż baza wiedzy
 

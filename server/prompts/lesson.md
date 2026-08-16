@@ -37,8 +37,8 @@ Napisz narzędziem `Write` **dokładnie trzy pliki** w katalogu roboczym, bez po
 | Plik | Zawartość |
 |---|---|
 | `index.html` | szkielet niżej z wypełnionymi sekcjami |
-| `lesson.css` | wyłącznie dodatki tej lekcji (klasy SVG/Canvas, układ diagramów) |
-| `lesson.js` | wywołania demek (`LA.demo*`), ćwiczenia (`LA.cwiczenia`) i sprawdzian (`LA.quiz`), nic poza tym |
+| `lesson.css` | wyłącznie dodatki tej lekcji; zwykle pusty, bo wygląd niosą motyw i komponenty |
+| `lesson.js` | wywołania `LA.komponent`, ćwiczenia (`LA.cwiczenia`) i sprawdzian (`LA.quiz`), nic poza tym |
 
 Nie twórz, nie czytaj i nie zmieniaj niczego poza katalogiem roboczym. Żadnych plików
 pomocniczych, kopii ani notatek — nadmiarowy plik unieważnia lekcję.
@@ -63,8 +63,8 @@ sprawdzian → sugestie.
    `--wiz-podswietlenie`. W SVG: `stroke="var(--wiz-1)"`. W Canvas: `LA.czytajZmienna('--wiz-1')`
    — Canvas nie dziedziczy zmiennych CSS.
 3. **Podwójne kodowanie.** Każde pojęcie to `<section class="pojecie">` z nagłówkiem `<h3>`,
-   wyjaśnieniem słownym i reprezentacją wizualną w `<figure class="diagram">` — schemat, oś,
-   wykres, tabela zależności. Rysowane w SVG, Canvas albo CSS.
+   wyjaśnieniem słownym i reprezentacją wizualną — schematem, osią, wykresem albo tabelą.
+   Wizualizację rysuje komponent z biblioteki (sekcja „Komponenty"), nie Ty.
 4. **Aktywne przypominanie.** Każda sekcja teorii kończy się jednym `.mikro-pytanie`:
    pytanie w `<p>`, odpowiedź w `<div data-chowane>`. Przycisk „Pokaż odpowiedź" dokłada
    runtime — nie pisz go sam.
@@ -81,18 +81,18 @@ sprawdzian → sugestie.
    i wartości `typ` w sprawdzianie zostają w formie podanej tutaj — nie tłumacz ich.
 10. **Nie powtarzaj tego, co już było.** Pojęcia z listy „co było wcześniej" traktuj jako
     znane: odwołuj się do nich, ale nie tłumacz od zera.
-11. **Każde kluczowe pojęcie ma sterowalne demko.** Statyczny SVG dopuszczalny wyłącznie tam,
-    gdzie sterowanie nie ma sensu (np. oś czasu wydarzeń) — i wymaga jednozdaniowego
-    uzasadnienia w komentarzu HTML nad diagramem. Ściana tekstu z obrazkami to nie jest lekcja.
-12. **Dobór poziomu:** parametry → domyślnie; krok po kroku → procesy i algorytmy;
-    manipulacja → struktury i geometria; edytor kodu → tematy programistyczne.
-13. **Demka wołaj wyłącznie** przez `LA.demoParametry` / `LA.demoKroki` / `LA.demoManipulacja` /
-    `LA.demoKod`. Żadnych własnych suwaków, przycisków ani obsługi zdarzeń — panel sterowania
-    należy do aplikacji.
-14. **Każde demko ma stabilne `id`** na pustej sekcji `<section class="demko" id="…">`.
+11. **Każde kluczowe pojęcie ma wizualizację** wywołaną przez `LA.komponent`. Ściana tekstu
+    z obrazkami to nie jest lekcja.
+12. **Nie pisz `<svg>`, `<canvas>` ani `<text>` własną ręką.** Tekst na sztywnych współrzędnych
+    wyjeżdża poza kadr, gdy tylko dane są dłuższe niż w Twoim przykładzie — dlatego rysowanie
+    należy do komponentów, które są sprawdzane w przeglądarce. Nie ma pasującego komponentu?
+    Zamów nowy w bloku JSON na końcu (sekcja „Komponenty") i wołaj go po nazwie.
+13. **Dobór trybu:** `staly` domyślnie; `parametry` przy zależnościach do pokręcenia;
+    `kroki` przy procesach i algorytmach; `manipulacja` przy strukturach i geometrii;
+    `kod` przy tematach programistycznych. Żadnych własnych suwaków ani przycisków —
+    panel sterowania należy do aplikacji.
+14. **Każda wizualizacja ma stabilne `id`** na pustej sekcji `<section class="demko" id="…">`.
     Po tym id zapamiętywany jest stan lekcji — nie licz go i nie losuj.
-15. **Kolory wizualizacji** wyłącznie ze zmiennych `--wiz-*` (reguła 2 łamie się właśnie tutaj):
-    w SVG `stroke="var(--wiz-1)"`, w Canvas `LA.czytajZmienna('--wiz-1')`.
 
 ## Sekcja `#sugestie`
 
@@ -145,19 +145,14 @@ LA.quiz([
 
 ## Wzór sekcji teorii
 
+Sekcja `.pojecie` niesie tekst i pustą sekcję `.demko`; wypełnia ją `lesson.js`.
+
 ```html
 <section class="pojecie">
   <h3>Częstotliwość i wysokość</h3>
   <p>Dźwięk jest drganiem powietrza. Liczba pełnych drgań w ciągu sekundy to
      <strong>częstotliwość</strong>, mierzona w hercach (Hz).</p>
-  <figure class="diagram">
-    <svg viewBox="0 0 472 200" role="img" aria-label="Dwie fale: 220 Hz i 440 Hz">
-      <line class="os" x1="20" y1="55" x2="452" y2="55" />
-      <path class="fala" stroke="var(--wiz-1)" d="M20 55 c19.4-46.5 34.6-46.5 54 0" />
-      <text class="opis" x="20" y="22">220 Hz — A</text>
-    </svg>
-    <figcaption>Ta sama amplituda, dwie częstotliwości</figcaption>
-  </figure>
+  <section class="demko" id="demko-fala"></section>
   <div class="mikro-pytanie">
     <p>Ile herców ma dźwięk leżący oktawę wyżej niż 330 Hz?</p>
     <div data-chowane>
@@ -167,129 +162,93 @@ LA.quiz([
 </section>
 ```
 
-Odpowiadające `lesson.css` — tylko to, czego nie ma we wspólnym motywie:
+## Komponenty
 
-```css
-.fala { fill: none; stroke-width: 2; }
-.os { stroke: var(--wiz-siatka); stroke-width: 1; }
-.opis { font-size: 11px; fill: var(--wiz-5); }
-```
+Wizualizacje pochodzą z biblioteki. Ty podajesz **nazwę komponentu i dane**; rysowanie,
+zawijanie tekstu, panel sterowania i zapamiętany stan należą do aplikacji.
 
-## Demka — interaktywność
+### Katalog
 
-Demko to pusta sekcja w HTML, którą wypełnia runtime:
+{{komponenty}}
 
-```html
-<section class="demko" id="demko-fala"></section>
-```
+Pełne źródło komponentu (razem z przykładem wywołania) możesz doczytać narzędziem `Read`
+z katalogu `public/komponenty/` — ale **nigdy go nie zmieniaj i nie dopisuj tam plików**.
 
-Wnętrze (panel sterowania, przyciski, wskaźniki) rysuje aplikacja. Ty podajesz w `lesson.js`
-**dane i funkcję rysującą**. Funkcja dostaje element `<figure class="diagram">` — wstaw do niego
-SVG przez `innerHTML` albo dorysuj Canvas. Etykiety przycisków są już przetłumaczone.
-
-### 1. Sterowanie parametrami — poziom domyślny
-
-Typy kontrolek: `zakres` (suwak, domyślny), `liczba`, `przelacznik` (`wartosc: true/false`),
-`opcje` (lista wartości).
+### Wywołanie
 
 ```js
-LA.demoParametry({
-  el: '#demko-fala',
-  opis: 'Przesuń suwaki i zobacz, co się zmienia.',
+LA.komponent({ el: '#demko-fala', nazwa: 'wykres-xy', dane: { serie: [...] } });
+```
+
+- `el` — selektor pustej sekcji `<section class="demko" id="…">` z HTML-a.
+- `nazwa` — komponent z katalogu wyżej.
+- `dane` — kształt opisany w katalogu przy tym komponencie; w trybach interaktywnych funkcja stanu.
+- `tryb` — opcjonalny; bez niego wynika z podanych pól.
+
+| Tryb | Kiedy | Co dokłada aplikacja | Dodatkowe pola |
+|---|---|---|---|
+| `staly` | domyślnie | nic — sam rysunek | — |
+| `parametry` | zależność do pokręcenia | suwaki, przełączniki, listy | `kontrolki` |
+| `kroki` | proces, algorytm | wstecz / dalej / odtwórz, „krok 3 z 7" | `kroki` |
+| `manipulacja` | struktura, geometria | przeciąganie elementów, reset układu | `elementy`, `przyZmianie` |
+| `kod` | tematy programistyczne | edytor i konsola w izolowanej ramce | `jezyk`, `kodStartowy`, `podglad` |
+
+W trybach interaktywnych `dane` zależą od stanu panelu. Podajesz je wtedy jako **funkcję
+stanu** — zwraca dane dla komponentu, nigdy HTML ani SVG. Przy `kroki` możesz pominąć funkcję:
+pola kroku scalają się z `dane` same.
+
+```js
+// parametry: funkcja dostaje wartości kontrolek po ich `id`
+LA.komponent({
+  el: '#demko-budzet',
+  nazwa: 'slupki',
+  opis: 'Przesuń suwaki i zobacz, jak zmienia się podział czasu.',
   kontrolki: [
-    { id: 'czestotliwosc', etykieta: 'Częstotliwość (Hz)', min: 110, max: 880, krok: 10, wartosc: 220 },
-    { id: 'ksztalt', etykieta: 'Kształt', opcje: ['sinus', 'prostokąt'], wartosc: 'sinus' },
+    { id: 'pisanie', etykieta: 'Pisanie (h/tydz.)', min: 0, max: 40, krok: 1, wartosc: 10 },
+    { id: 'poprawki', etykieta: 'Poprawki (h/tydz.)', min: 0, max: 40, krok: 1, wartosc: 4 },
   ],
-  rysuj: (cel, w) => {
-    const okresy = w.czestotliwosc / 110;
-    const punkty = [];
-    for (let i = 0; i <= 240; i++) {
-      const t = i / 240;
-      const faza = Math.sin(2 * Math.PI * okresy * t);
-      const v = w.ksztalt === 'prostokąt' ? Math.sign(faza) : faza;
-      punkty.push(`${(t * 460).toFixed(1)} ${(75 - v * 63).toFixed(1)}`);
-    }
-    cel.innerHTML = `
-      <svg viewBox="0 0 460 150" role="img" aria-label="Kształt drgania">
-        <line class="os" x1="0" y1="75" x2="460" y2="75" />
-        <path class="fala" stroke="var(--wiz-1)" d="M${punkty.join(' L')}" />
-      </svg>`;
-  },
+  dane: (w) => ({
+    jednostka: 'h/tydz.',
+    slupki: [
+      { etykieta: 'Pisanie', wartosc: w.pisanie, akcent: 1 },
+      { etykieta: 'Poprawki', wartosc: w.poprawki, akcent: 2 },
+    ],
+  }),
 });
-```
 
-### 2. Krok po kroku — procesy i algorytmy
-
-Runtime dokłada przyciski wstecz / dalej / odtwórz i wskaźnik „krok 3 z 7". Każdy krok ma `opis`
-(wyświetlany pod rysunkiem) i dowolne własne pola ze stanem.
-
-```js
-LA.demoKroki({
+// kroki: każdy krok ma `opis` (pokazywany pod rysunkiem) i pola danych komponentu
+LA.komponent({
   el: '#demko-sort',
+  nazwa: 'slupki',
   kroki: [
-    { opis: 'Stan początkowy.', tablica: [5, 3, 8, 1] },
-    { opis: 'Zamieniamy pierwszą parę.', tablica: [3, 5, 8, 1] },
-    { opis: 'Najmniejszy element trafia na początek.', tablica: [1, 3, 5, 8] },
+    { opis: 'Stan początkowy.', slupki: [{ etykieta: 'a', wartosc: 5 }] },
+    { opis: 'Po zamianie.', slupki: [{ etykieta: 'a', wartosc: 3 }] },
   ],
-  rysuj: (cel, krok) => {
-    cel.innerHTML = `
-      <svg viewBox="0 0 460 120" role="img" aria-label="Stan tablicy">
-        ${krok.tablica
-          .map((v, i) => `<rect x="${20 + i * 110}" y="${110 - v * 12}" width="80" height="${v * 12}"
-             fill="var(--wiz-3)" />`)
-          .join('')}
-      </svg>`;
-  },
 });
-```
 
-### 3. Manipulacja bezpośrednia — struktury i geometria
-
-Elementy mają `id`, `x`, `y` i są przeciągane wskaźnikiem (mysz i dotyk). Runtime dokłada przycisk
-„Reset układu". Ograniczenia (np. ruch tylko w pionie, przycięcie do zakresu) nakładasz w `rysuj`,
-poprawiając współrzędne przed narysowaniem.
-
-```js
-LA.demoManipulacja({
-  el: '#demko-graf',
-  opis: 'Przeciągnij węzły — długości krawędzi liczą się na bieżąco.',
-  elementy: [
-    { id: 'a', x: 90, y: 60 },
-    { id: 'b', x: 300, y: 140 },
-  ],
-  rysuj: (cel, wezly) => {
-    const [a, b] = wezly;
-    cel.innerHTML = `
-      <svg viewBox="0 0 460 220" role="img" aria-label="Dwa węzły i krawędź">
-        <line class="os" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" />
-        ${wezly.map((w) => `<circle cx="${w.x}" cy="${w.y}" r="12" fill="var(--wiz-2)" />`).join('')}
-        <text class="opis" x="10" y="20">${Math.round(Math.hypot(b.x - a.x, b.y - a.y))} px</text>
-      </svg>`;
-  },
-  przyZmianie: (wezly) => {},
-});
-```
-
-### 4. Edytor kodu — wyłącznie tematy programistyczne
-
-`jezyk`: `js`, `html` albo `css`. Kod wykonuje się w izolowanej ramce i **nigdy nie opuszcza
-przeglądarki**; `console.log` i błędy trafiają do panelu wyniku. Dla `css` podaj markup do
-ostylowania w polu `podglad`.
-
-```js
-LA.demoKod({
+// kod: wykonuje się w izolowanej ramce i nigdy nie opuszcza przeglądarki
+LA.komponent({
   el: '#demko-kod',
+  tryb: 'kod',
   jezyk: 'js',
   opis: 'Zmień wartość i uruchom.',
-  kodStartowy: [
-    'const start = 110;',
-    '',
-    'for (let i = 0; i < 5; i++) {',
-    '  console.log(`Oktawa ${i}: ${start * 2 ** i} Hz`);',
-    '}',
-  ].join('\n'),
+  kodStartowy: 'for (let i = 0; i < 5; i++) console.log(110 * 2 ** i);',
 });
 ```
+
+Tryb `kod` nie ma `nazwa` ani `dane` — nie rysuje danych, tylko daje edytor.
+
+### Gdy nic nie pasuje
+
+Nie kombinuj z ręcznym SVG i nie naciągaj komponentu, który jest o czymś innym. **Zamów nowy**:
+wołaj go w `lesson.js` po wymyślonej nazwie, tak jakby już istniał, i opisz go w bloku JSON
+na końcu. Komponent powstanie po lekcji, zostanie sprawdzony w przeglądarce i wejdzie do
+biblioteki — kolejne lekcje będą go już miały.
+
+- Nazwa: małe litery, myślniki, 3–32 znaki (`macierz-2x2`, `mapa-ciepla`).
+- Najwyżej **trzy** zamówienia na lekcję. Reszta ma pójść na istniejących komponentach.
+- Zamawiaj rzecz **ogólną**, nie jednorazową: `macierz-2x2`, nie `macierz-ryzyk-projektu-x`.
+- Plików komponentów **nie piszesz** — od tego jest osobny krok.
 
 ## Na koniec
 
@@ -298,8 +257,17 @@ liczy się jako nieudana, bo kolejne lekcje dublowałyby materiał:
 
 ```json
 { "summary": "jedno–dwa zdania o tym, co lekcja faktycznie zawiera",
-  "covers": ["pojęcie 1", "pojęcie 2", "pojęcie 3"] }
+  "covers": ["pojęcie 1", "pojęcie 2", "pojęcie 3"],
+  "komponenty": [
+    { "nazwa": "macierz-2x2",
+      "opis": "Cztery ćwiartki z podpisami osi; do klasyfikacji dwuwymiarowej.",
+      "dane": "{ osie: { x, y }, cwiartki: [{ tytul, tresc }] }",
+      "probki": ["typowa", "długie etykiety w każdej ćwiartce"] }
+  ] }
 ```
 
 `covers` to lista pojęć **omówionych w tej lekcji** — po niej kolejne lekcje wiedzą, czego
 nie tłumaczyć od nowa i z czego zadać pytania powtórkowe.
+
+`komponenty` to zamówienia z sekcji „Gdy nic nie pasuje". Nie zamawiasz nic nowego? Pomiń pole
+albo zostaw pustą tablicę.

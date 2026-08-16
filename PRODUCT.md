@@ -52,7 +52,7 @@ Trzy rzeczy naraz, których sąsiednie narzędzia nie mają razem:
 - **Kod z edytorów w lekcji nie opuszcza przeglądarki.**
 - **Żaden string widoczny dla użytkownika nie jest wpisany w kod na sztywno** — łącznie z komunikatami błędów i `aria-label`. Brakujący klucz zwraca klucz, nie pusty string.
 - **Kolory wyłącznie ze zmiennych CSS** w `theme.css`; żaden inny plik nie zapisuje wartości koloru na sztywno. Canvas czyta je przez `czytajZmienna()`.
-- Node.js, ESM, czysty JavaScript. Bez TypeScriptu, bez bundlera, bez kroku budowania. Dwie zależności produkcyjne: `express`, `@anthropic-ai/claude-agent-sdk`. Bez biblioteki i18n, wykresów, generatora PDF.
+- Node.js, ESM, czysty JavaScript. Bez TypeScriptu, bez bundlera, bez kroku budowania. Dwie zależności produkcyjne: `express`, `@anthropic-ai/claude-agent-sdk`. Bez biblioteki i18n, wykresów, generatora PDF. Jedyna zależność deweloperska: `playwright-core` do kontroli wizualnej komponentów — sterujący systemową przeglądarką, bez pobierania własnej.
 - Store to jedyne miejsce dotykające dysku. Generator nie zna HTTP, serwer nie zna promptów.
 
 **Terminologia — enumy w danych są po polsku, niezależnie od języka.** To format danych, nie tekst dla człowieka; ekran mapuje je przez `t('status.' + lesson.status)`:
@@ -64,6 +64,10 @@ Trzy rzeczy naraz, których sąsiednie narzędzia nie mają razem:
 - `verdict` oceny praktyki: `poprawnie` · `częściowo` · `niepoprawnie`
 
 Nazwy klas komponentów lekcji trafiają do promptu, więc są **ustalone raz i niezmienne**: `.pojecie`, `.diagram`, `.demko`, `.mikro-pytanie`, `.cwiczenie`, `.sprawdzian`, `.sugestie`.
+
+**Biblioteka komponentów.** Wizualizacje lekcji nie są rysowane przez model — pochodzą z `public/komponenty/`, gdzie każdy komponent to jeden plik z `meta`, `probki`, `style` i `rysuj`. Lekcja podaje nazwę i dane (`LA.komponent`), a katalog opisów trafia do promptu. Gdy nic nie pasuje, lekcja **zamawia** nowy komponent w bloku JSON: powstaje osobnym, tańszym etapem, przechodzi kontrolę w prawdziwej przeglądarce (tekst poza kadrem, nachodzenie, ucięcia, za mały font, czysta konsola w obu motywach i przy dwóch szerokościach) i dopiero wtedy — automatycznie, bez pytania — wchodzi do biblioteki. Biblioteka rośnie z każdym kursem.
+
+Reguły nienaruszalne biblioteki: **tekst renderuje się w HTML, nigdy w SVG** (`<text>` nie zawija i przy dłuższych danych wyjeżdża poza `viewBox` — to był realny błąd wygenerowanych lekcji); komponent nie ma żadnego `import`, helpery dostaje w `ctx`; `document` dotyka wyłącznie wewnątrz `rysuj`; każdy selektor zaczyna się od `.k-<nazwa>`; zero literałów koloru.
 
 ## Brand Commitments
 

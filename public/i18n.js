@@ -143,6 +143,7 @@ export const dict = {
     'stage.wywiad-ocena': 'Ocena wywiadu',
     'stage.plan': 'Plan kursu',
     'stage.lekcja': 'Generowanie lekcji',
+    'stage.komponent': 'Nowy komponent',
     'stage.praktyka': 'Ocena praktyki',
     'stage.sugestie': 'Propozycje lekcji',
 
@@ -150,6 +151,7 @@ export const dict = {
     'stage.wywiad-ocena.hint': 'Odpowiedzi na poziom, tempo i zakres kursu.',
     'stage.plan.hint': 'Struktura całego kursu. Najważniejsza decyzja dydaktyczna.',
     'stage.lekcja.hint': 'Najcięższy etap: teoria, diagramy, demka i sprawdzian.',
+    'stage.komponent.hint': 'Brakująca wizualizacja i jej poprawki po kontroli w przeglądarce.',
     'stage.praktyka.hint': 'Ocena kodu i odpowiedzi z ćwiczeń.',
     'stage.sugestie.hint': 'Propozycje kolejnych lekcji po sprawdzianie.',
 
@@ -318,6 +320,7 @@ export const dict = {
     'stage.wywiad-ocena': 'Interview assessment',
     'stage.plan': 'Course plan',
     'stage.lekcja': 'Lesson generation',
+    'stage.komponent': 'New component',
     'stage.praktyka': 'Practice grading',
     'stage.sugestie': 'Lesson suggestions',
 
@@ -325,6 +328,7 @@ export const dict = {
     'stage.wywiad-ocena.hint': 'Turns answers into level, pace and scope.',
     'stage.plan.hint': 'The structure of the whole course. The key teaching decision.',
     'stage.lekcja.hint': 'The heaviest stage: theory, diagrams, demos and the quiz.',
+    'stage.komponent.hint': 'A missing visualisation and its fixes after the browser check.',
     'stage.praktyka.hint': 'Grades code and answers from the exercises.',
     'stage.sugestie.hint': 'Suggests further lessons after the quiz.',
 

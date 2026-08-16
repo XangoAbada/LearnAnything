@@ -19,12 +19,22 @@ function envWithoutApiKey() {
  * ustawienia etapu spotykają się z wywołaniem — i jedyne, które da się sprawdzić testem.
  * Brak etapu albo `null` w ustawieniu znaczy „domyślne z CLI”: pole nie trafia do options.
  */
-export function queryOptions({ stage, cwd, allowedTools = [], maxTurns = 1, abortController }) {
+export function queryOptions({
+  stage,
+  cwd,
+  allowedTools = [],
+  maxTurns = 1,
+  abortController,
+  additionalDirectories = [],
+}) {
   const { model = null, effort = null } = (stage && readSettings()[stage]) || {};
   return {
     cwd,
     allowedTools,
     maxTurns,
+    // SDK nie zna katalogu „tylko do odczytu" — że biblioteka komponentów nie została ruszona,
+    // sprawdza generator po fakcie (store.komponentySnapshot).
+    ...(additionalDirectories.length ? { additionalDirectories } : {}),
     permissionMode: allowedTools.length ? 'acceptEdits' : 'default',
     settingSources: [], // izolacja od cudzych CLAUDE.md — nie dotyka poświadczeń
     env: envWithoutApiKey(),
@@ -42,6 +52,7 @@ export function queryOptions({ stage, cwd, allowedTools = [], maxTurns = 1, abor
  * @param {number}  [p.maxTurns]     domyślnie 1 dla zadań tekstowych
  * @param {number}  [p.timeoutMs]    domyślnie 120_000; lekcje dostają więcej
  * @param {string}  [p.stage]        etap aplikacji — decyduje o modelu i poziomie rozumowania
+ * @param {string[]}[p.additionalDirectories] katalogi widoczne poza `cwd` (biblioteka komponentów)
  * @param {(m: object) => void} [p.onMessage] podgląd ruchu modelu; jedyne źródło postępu w locie
  * @returns {Promise<string>}        tekst wyniku
  */
@@ -53,6 +64,7 @@ export async function runClaude({
   timeoutMs = DEFAULT_TIMEOUT_MS,
   stage,
   onMessage,
+  additionalDirectories = [],
 }) {
   const abortController = new AbortController();
   // Sam abortController nie przerywa wywołania w locie (sprawdzone: abort po 1 s, wynik po 6 s),
@@ -68,7 +80,7 @@ export async function runClaude({
   const consume = async () => {
     for await (const message of query({
       prompt,
-      options: queryOptions({ stage, cwd, allowedTools, maxTurns, abortController }),
+      options: queryOptions({ stage, cwd, allowedTools, maxTurns, abortController, additionalDirectories }),
     })) {
       if (message.type === 'result') {
         if (message.subtype === 'success') return message.result;
