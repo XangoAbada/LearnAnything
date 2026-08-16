@@ -87,6 +87,7 @@ test('kurs bez gotowych lekcji daje spis treści i wyjaśnienie, nie wyjątek', 
   assert.doesNotMatch(html, /<article/);
   assert.match(html, /Spis treści/);
   assert.match(html, /wydruk pozostaje pusty/);
+  assert.doesNotMatch(html, /pasek-druku/); // nie ma czego zapisywać, więc nie ma czym kusić
 });
 
 test('etykiety idą w języku kursu, nie powłoki', () => {
@@ -106,7 +107,10 @@ test('dokument wstaje w trybie wydruku i z arkuszami lekcji', () => {
   assert.match(html, /data-theme="jasny"/);
   assert.match(html, /href="\/print\.css"/);
   assert.match(html, /href="\/lessons\/p1\/01-czym-jest-dzwiek\/lesson\.css"/);
-  assert.match(html, /window\.LA\.drukuj\(\)/);
+  // Drukowanie zostaje kliknięciem użytkownika: dokument pokazuje się najpierw.
+  assert.match(html, /class="pasek-druku"/);
+  assert.match(html, /onclick="window\.print\(\)"/);
+  assert.doesNotMatch(html, /LA\.drukuj/);
 });
 
 test('pojedyncza lekcja jedzie bez spisu treści', () => {

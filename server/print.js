@@ -11,12 +11,16 @@ const TEKSTY = {
     niegotowa: 'jeszcze niewygenerowana',
     uszkodzona: 'nie udało się dołączyć',
     pusto: 'Żadna lekcja tego kursu nie jest jeszcze gotowa — wydruk pozostaje pusty.',
+    drukuj: 'Zapisz jako PDF',
+    podpowiedz: 'W oknie drukowania wybierz „Zapisz jako PDF”.',
   },
   en: {
     spis: 'Contents',
     niegotowa: 'not generated yet',
     uszkodzona: 'could not be included',
     pusto: 'No lesson of this course is ready yet — this printout stays empty.',
+    drukuj: 'Save as PDF',
+    podpowiedz: 'In the print dialog choose “Save as PDF”.',
   },
 };
 
@@ -57,6 +61,12 @@ export function dokument({ project, lessons, czytaj, spis = true }) {
     '</li>';
 
   const naglowek = [
+    // Okno drukowania otwierane samo z siebie lądowało nad dokumentem, którego nikt jeszcze
+    // nie widział — i po anulowaniu nie było jak wrócić. Pasek znika przy druku (print.css).
+    wlozone.length &&
+      `<div class="pasek-druku">` +
+        `<button type="button" onclick="window.print()">${esc(t.drukuj)}</button>` +
+        `<span>${esc(t.podpowiedz)}</span></div>`,
     spis && `<header class="lekcja-naglowek"><h1>${esc(project.topic)}</h1></header>`,
     spis && `<nav class="spis"><h2>${esc(t.spis)}</h2><ol>${czesci.map(pozycja).join('')}</ol></nav>`,
     // Pusty wydruk ma powiedzieć, dlaczego jest pusty — także ten z jednej niegotowej lekcji.
@@ -88,7 +98,6 @@ ${naglowek}
 ${wlozone.map(artykul).join('\n')}
 <script type="module" src="/runtime.js"></script>
 ${wlozone.map(skrypt).join('\n')}
-<script type="module">window.LA.drukuj()</script>
   </body>
 </html>
 `;

@@ -415,11 +415,11 @@ p {
 
 /* --- sterowanie ------------------------------------------------------------- */
 
-/* Nawigacja zostaje <a>, ale ma wyglądać jak sterowanie: link ustawień w linijce arkusza
-   i skoki między lekcjami biorą ten sam wygląd co przycisk. */
+/* Nawigacja zostaje <a>, ale ma wyglądać jak sterowanie. Klasa `ghost` — nie miejsce
+   w drzewie — decyduje o tym wyglądzie: odnośnik dorzucony w nowym pasku miał inaczej
+   wyglądać jak goły link, bo selektor wymieniał paski po nazwie. */
 button,
-.switches a,
-.lesson-bar .ghost {
+.ghost {
   font: inherit;
   font-size: 0.74rem;
   letter-spacing: 0.12em;
@@ -437,15 +437,13 @@ button,
 }
 
 button:hover,
-.switches a:hover,
-.lesson-bar a.ghost:hover {
+a.ghost:hover {
   border-color: var(--crease-m);
   background: var(--surface-2);
 }
 
 button:focus-visible,
-.switches a:focus-visible,
-.lesson-bar a.ghost:focus-visible {
+a.ghost:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -486,9 +484,7 @@ button.primary:disabled {
   color: var(--muted);
 }
 
-button.ghost,
-.switches a.ghost,
-.lesson-bar .ghost {
+.ghost {
   background: transparent;
   text-decoration: none;
 }
@@ -920,7 +916,7 @@ textarea:focus-visible {
   overflow-wrap: anywhere;
 }
 
-.lesson-bar .ghost.disabled {
+.ghost.disabled {
   color: var(--muted);
   opacity: 0.5;
   cursor: default;

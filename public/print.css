@@ -114,3 +114,35 @@ body[data-lesson] a {
 :is(.spis + .lekcja-druk, .lekcja-druk + .lekcja-druk) {
   break-before: page;
 }
+
+/* Pasek nad dokumentem zbiorczym — jedyny interfejs, który zostaje na ekranie. Wydruk
+   pokazuje się najpierw, drukowanie zostaje kliknięciem użytkownika, a na papier pasek
+   nie idzie. Specyficzność musi dobić do reguły chowającej `button` wyżej. */
+.pasek-druku {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid currentColor;
+  font-size: 9pt;
+}
+
+body[data-lesson] .pasek-druku button {
+  display: inline-block !important;
+  font: inherit;
+  font-size: 9pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid currentColor;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+@media print {
+  .pasek-druku {
+    display: none !important;
+  }
+}

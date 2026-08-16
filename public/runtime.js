@@ -134,10 +134,6 @@ let korzen = null;
 const zasieg = () => korzen ?? document;
 const sekcja = (id) => zasieg().querySelector(`#${id}`);
 
-// Komponenty biblioteki dociągają się dynamicznym importem — wydruk musi na nie poczekać,
-// inaczej okno drukowania stanie nad pustymi ramkami.
-const czekaja = [];
-
 // --- stan lekcji -------------------------------------------------------------
 // Stan należy do przeglądarki: jeden klucz na lekcję, serwer o nim nie wie. To wygoda,
 // nie źródło prawdy — uszkodzony albo nieznany wpis jest ignorowany, bez migracji.
@@ -1076,7 +1072,6 @@ export function komponent(opcje = {}) {
     },
     (err) => bladKomponentu(opcje, err),
   );
-  czekaja.push(gotowy);
   return gotowy;
 }
 
@@ -1187,17 +1182,10 @@ if (typeof document !== 'undefined') {
     demka,
     stan,
     // Wydruk zbiorczy woła to sam: marker przed skryptem każdej lekcji przestawia korzeń,
-    // a `drukuj` otwiera okno drukowania dopiero, gdy komponenty się dociągnęły.
+    // żeby domyślne cele trafiły do właściwego <article>. Drukowanie zostaje przy użytkowniku.
     druk: (lessonId) => {
       korzen = document.querySelector(`article[data-lesson="${lessonId}"]`);
     },
-    drukuj: () =>
-      addEventListener('load', () =>
-        Promise.all(czekaja).then(
-          () => print(),
-          () => print(),
-        ),
-      ),
   };
   if (!DRUK) {
     initChowane();
