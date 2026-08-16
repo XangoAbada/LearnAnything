@@ -629,11 +629,21 @@ textarea:focus-visible {
   border-top: 1px solid var(--border);
 }
 
-.plan-row,
 .lessons li {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  padding: 0.6rem 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Tytuł nad opisem, oba na pełnej szerokości: w dwóch kolumnach dłuższy tytuł
+   nie mieścił się w polu i był ucinany w połowie słowa. */
+.plan-row {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr;
+  align-items: baseline;
+  gap: 0.2rem 0.8rem;
   padding: 0.6rem 0.2rem;
   border-bottom: 1px solid var(--border);
 }
@@ -647,12 +657,11 @@ textarea:focus-visible {
 }
 
 .plan-row .title {
-  flex: 1 1 16rem;
   min-width: 0;
 }
 
 .plan-row .brief {
-  flex: 2 1 20rem;
+  grid-column: 2;
   font-size: 0.78rem;
   line-height: 1.5;
 }

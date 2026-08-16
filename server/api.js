@@ -118,7 +118,8 @@ api.post('/projects/:id/plan/accept', (req, res) => {
   if (store.readIndex(project.id).length) {
     throw new HttpError(409, 'plan tego projektu został już zaakceptowany');
   }
-  generator.validatePlan(lessons, project.course.scope); // klient mógł namieszać przy edycji tytułów
+  // Widełki są podpowiedzią dla modelu, nie bramką dla użytkownika — sprawdzamy tylko kształt.
+  need(lessons.length > 0 && lessons.every((l) => l?.title?.trim()), 'plan: każda lekcja potrzebuje tytułu');
 
   const created = lessons.reduce((acc, l) => {
     const afterOrder = acc.length ? acc[acc.length - 1].order : 0;

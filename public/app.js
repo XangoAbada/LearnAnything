@@ -58,6 +58,10 @@ export function toggleTheme() {
   document.getElementById('header').replaceChildren(...headerNodes());
 }
 
+/** Wyliczony plan czeka w przeglądarce, żeby wyjście do menu nie kosztowało kolejnego
+    wywołania modelu. Kasuje go akceptacja, przeliczenie i skasowanie projektu. */
+const planKey = (projectId) => `learnanything:${projectId}:plan`;
+
 /** Stan lekcji należy do przeglądarki, więc tylko ona wie, kiedy go posprzątać. */
 function forgetLessons(projectId) {
   const prefix = `learnanything:${projectId}:`;
@@ -352,14 +356,32 @@ async function screenInterview([id], s) {
 // --- ekran 3: plan kursu ----------------------------------------------------
 
 async function screenPlan([id], s) {
-  s.project ??= (await request('GET', `/api/projects/${id}`)).project;
+  if (!s.project) {
+    const data = await request('GET', `/api/projects/${id}`);
+    // Plan już zaakceptowany — ekran planu nie ma tu nic do roboty (i nie ma po co wołać modelu).
+    if (data.lessons.length) {
+      location.hash = `#/p/${id}`;
+      return h('p', { className: 'muted', textContent: t('app.loading') });
+    }
+    s.project = data.project;
+  }
   const course = s.project.course;
 
   const load = (comment) =>
     act(s, async () => {
+      s.errorKey = 'plan.error.model';
       s.plan = null;
+      localStorage.removeItem(planKey(id));
       s.plan = await request('POST', `/api/projects/${id}/plan`, { comment });
+      localStorage.setItem(planKey(id), JSON.stringify(s.plan));
     });
+
+  // Uszkodzony wpis nie może zablokować ekranu — wtedy plan po prostu liczy się od nowa.
+  try {
+    s.plan ??= JSON.parse(localStorage.getItem(planKey(id)) || 'null');
+  } catch {
+    localStorage.removeItem(planKey(id));
+  }
 
   // Pierwsze wejście: plan liczy się sam. Po błędzie czeka na „Przelicz plan”, nie kręci się w kółko.
   // Flaga busy zamyka też furtkę drugiego wywołania modelu przy przerysowaniu (motyw, język) w trakcie.
@@ -367,6 +389,7 @@ async function screenPlan([id], s) {
     s.busy = true;
     try {
       s.plan = await request('POST', `/api/projects/${id}/plan`, { comment: '' });
+      localStorage.setItem(planKey(id), JSON.stringify(s.plan));
     } catch (err) {
       s.error = err;
     } finally {
@@ -376,8 +399,10 @@ async function screenPlan([id], s) {
 
   const accept = () =>
     act(s, async () => {
+      s.errorKey = 'app.error';
       const lessons = s.plan.lessons.map((l) => ({ title: l.title, brief: l.brief }));
       await request('POST', `/api/projects/${id}/plan/accept`, { lessons });
+      localStorage.removeItem(planKey(id));
       location.hash = `#/p/${id}`;
     });
 
@@ -391,6 +416,7 @@ async function screenPlan([id], s) {
         'aria-label': t('plan.lesson.title', { n: i + 1 }),
         oninput: (e) => {
           lesson.title = e.target.value;
+          localStorage.setItem(planKey(id), JSON.stringify(s.plan));
         },
       }),
       h('span', { className: 'muted brief', textContent: lesson.brief }),
@@ -415,7 +441,7 @@ async function screenPlan([id], s) {
           textContent: t('plan.range', { n: s.plan.lessons.length, min, max }),
         })
       : null,
-    s.error ? errorBox(s.error, 'plan.error.model') : null,
+    s.error ? errorBox(s.error, s.errorKey ?? 'plan.error.model') : null,
     s.plan ? h('ol', { className: 'plan' }, s.plan.lessons.map(row)) : null,
     h('div', { className: 'actions' }, [
       h('button', {

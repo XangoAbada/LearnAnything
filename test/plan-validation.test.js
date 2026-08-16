@@ -179,11 +179,14 @@ test('druga akceptacja daje 409 i nie rusza indeksu', async () => {
   assert.deepEqual(store.readIndex(p.id), before);
 });
 
-test('akceptacja poza widełkami to 502, brak projektu to 404, zły kształt to 400', async () => {
+test('akceptacja poza widełkami przechodzi, brak projektu to 404, zły kształt to 400', async () => {
   const p = await newProject();
   await call('POST', `/projects/${p.id}/interview/skip`);
-  assert.equal((await call('POST', `/projects/${p.id}/plan/accept`, { lessons: plan(3).lessons })).status, 502);
+  // Widełki są dla modelu — zaakceptowanego planu nie odrzucamy za ich przekroczenie.
   assert.equal((await call('POST', `/projects/${p.id}/plan/accept`, {})).status, 400);
+  assert.equal((await call('POST', `/projects/${p.id}/plan/accept`, { lessons: [{ title: ' ' }] })).status, 400);
+  // Widełki są dla modelu — zaakceptowanego planu nie odrzucamy za ich przekroczenie.
+  assert.equal((await call('POST', `/projects/${p.id}/plan/accept`, { lessons: plan(3).lessons })).status, 200);
   assert.equal((await call('GET', '/projects/nie-ma-takiego')).status, 404);
   assert.equal((await call('POST', '/projects', { topic: 'X', language: 'de' })).status, 400);
 });
