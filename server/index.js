@@ -40,6 +40,18 @@ await listModels();
 const resumed = recoverOnBoot();
 if (resumed) console.log(`kolejka: wznowione projekty: ${resumed}`);
 
-app.listen(config.port, () => {
-  console.log(`LearnAnything → http://localhost:${config.port}`);
-});
+// Zajęty port kończył się cichym wyjściem z kodem 0 — wyglądało to na start i natychmiastowe
+// zamknięcie bez powodu. Serwer bez własnej obsługi 'error' gasi się sam, więc mówimy, co się stało.
+app
+  .listen(config.port, () => {
+    console.log(`LearnAnything → http://localhost:${config.port}`);
+  })
+  .on('error', (err) => {
+    console.error(
+      err.code === 'EADDRINUSE'
+        ? `Port ${config.port} jest zajęty — aplikacja już chodzi albo trzyma go inny proces.\n` +
+            `Zamknij tamten proces albo uruchom na innym porcie: PORT=3001 npm start`
+        : `Serwer nie wstał: ${err.message}`,
+    );
+    process.exit(1);
+  });
