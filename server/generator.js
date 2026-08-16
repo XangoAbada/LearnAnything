@@ -152,6 +152,81 @@ export const PACE_SHAPE = {
   szybkie: { concepts: '6–8', exercises: 5, quiz: 10 },
 };
 
+/**
+ * Opcje treści lekcji — ustawiane na ekranie planu, zmienialne później. Brak pola
+ * w projekcie znaczy „jak dotąd": każdy domyślny wariant odtwarza zachowanie sprzed opcji.
+ */
+export const CONTENT = {
+  mikroPytania: ['tak', 'brak'],
+  sprawdzian: ['pełny', 'krótki', 'brak'],
+  praktyka: ['pełna', 'krótka', 'brak'],
+  wizualizacje: ['pełne', 'oszczędne', 'brak'],
+  tryby: ['pełne', 'bez-kodu', 'statyczne'],
+};
+
+export const CONTENT_DEFAULT = {
+  mikroPytania: 'tak',
+  sprawdzian: 'pełny',
+  praktyka: 'pełna',
+  wizualizacje: 'pełne',
+  tryby: 'pełne',
+  uwagi: '',
+};
+
+export const UWAGI_MAX = 300;
+
+/** Opcje projektu domknięte do kompletu — wartość spoza enumu wraca do domyślnej. */
+export const contentOf = (project) => {
+  const raw = project?.content ?? {};
+  const out = { ...CONTENT_DEFAULT };
+  for (const [key, values] of Object.entries(CONTENT)) {
+    if (values.includes(raw[key])) out[key] = raw[key];
+  }
+  out.uwagi = String(raw.uwagi ?? '').trim().slice(0, UWAGI_MAX);
+  return out;
+};
+
+const QUIZ_ILE = { krótki: 4, brak: 0 };
+const PRAKTYKA_ILE = { krótka: 1, brak: 0 };
+
+const MIKRO = {
+  tak: 'Każda sekcja teorii kończy się jednym `.mikro-pytanie` (reguła 4).',
+  brak: 'Bez `.mikro-pytanie` — pomiń regułę 4, sekcje teorii kończą się treścią.',
+};
+
+const WIZUALIZACJE = {
+  pełne: 'Każde kluczowe pojęcie ma wizualizację z biblioteki (reguły 11–12).',
+  oszczędne:
+    'Wizualizacja tylko tam, gdzie sam tekst nie wystarczy — najwyżej dwie na lekcję. Reszta pojęć bez `LA.komponent`.',
+  brak: 'Bez wizualizacji: nie wołaj `LA.komponent`, nie zamawiaj komponentów, pomiń reguły 11–13. Zamiast schematu — przykład, analogia albo lista kroków w tekście.',
+};
+
+const TRYBY_OPISU = {
+  pełne: 'Wszystkie tryby `LA.komponent`: `staly`, `parametry`, `kroki`, `manipulacja`, `kod`.',
+  'bez-kodu': 'Tryby `staly`, `parametry`, `kroki`, `manipulacja`. Trybu `kod` (edytor) nie używaj.',
+  statyczne: 'Wyłącznie tryb `staly` — żadnych kontrolek, kroków ani edytora.',
+};
+
+/**
+ * Ile czego ma być w lekcji: tempo daje bazę, opcje treści ją przycinają.
+ * @returns {{concepts: string, exercises: number, quiz: number, mikro: string,
+ *   wizualizacje: string, tryby: string, uwagi: string, komponenty: boolean}}
+ */
+export function lessonShape(project) {
+  const base = PACE_SHAPE[project.course?.pace] ?? PACE_SHAPE.normalne;
+  const content = contentOf(project);
+  return {
+    concepts: base.concepts,
+    exercises: PRAKTYKA_ILE[content.praktyka] ?? base.exercises,
+    quiz: QUIZ_ILE[content.sprawdzian] ?? base.quiz,
+    mikro: MIKRO[content.mikroPytania],
+    wizualizacje: WIZUALIZACJE[content.wizualizacje],
+    tryby: TRYBY_OPISU[content.tryby],
+    uwagi: content.uwagi ? `Uwagi użytkownika do treści: ${content.uwagi}` : '(brak)',
+    komponenty: content.wizualizacje !== 'brak',
+  };
+}
+
 /** Dokładnie te pliki i nic poza nimi — katalog lekcji jest granicą zapisu. */
 const LESSON_FILES = ['index.html', 'lesson.css', 'lesson.js'];
 
@@ -334,9 +409,10 @@ export async function generateLesson(
 ) {
   const previous = index.filter((l) => l.order < lesson.order);
   const revision = [...new Set(previous.flatMap((l) => l.covers ?? []))];
-  const shape = PACE_SHAPE[project.course.pace] ?? PACE_SHAPE.normalne;
+  const shape = lessonShape(project);
   // 20–30% sprawdzianu to powtórka; w pierwszej lekcji nie ma czego powtarzać.
-  const revisionQuestions = revision.length ? Math.max(1, Math.round(shape.quiz * 0.25)) : 0;
+  const revisionQuestions =
+    revision.length && shape.quiz ? Math.max(1, Math.round(shape.quiz * 0.25)) : 0;
 
   const skeleton = lessonTemplate
     .replaceAll('{{language}}', project.language)
@@ -361,9 +437,14 @@ export async function generateLesson(
     exercises: shape.exercises,
     quiz: shape.quiz,
     revisionQuestions,
+    mikro: shape.mikro,
+    wizualizacje: shape.wizualizacje,
+    tryby: shape.tryby,
+    uwagi: shape.uwagi,
     extend: extendContext(lesson, index),
     skeleton,
-    komponenty: await katalogTekst(),
+    // Katalog to kilkanaście kilobajtów promptu — lekcja bez wizualizacji go nie potrzebuje.
+    komponenty: shape.komponenty ? await katalogTekst() : '_(wizualizacje wyłączone w tym kursie)_',
   });
 
   // Pusty katalog przed startem: po nieudanej próbie leżą tam pliki-niedopałki.
@@ -404,7 +485,7 @@ export async function generateLesson(
 
   // Zamówione komponenty powstają po lekcji, tanim etapem: pełne ponowienie to opus i 20 minut.
   const nieudane = [];
-  for (const spec of zamowienia(data, nazwyKomponentow())) {
+  for (const spec of shape.komponenty ? zamowienia(data, nazwyKomponentow()) : []) {
     const wynik = await zbudujKomponent(spec, project.language, run, kontrola.komponent);
     if (!wynik.ok) nieudane.push(`Komponent \`${wynik.nazwa}\` nie powstał:\n${wynik.raport}`);
   }

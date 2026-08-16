@@ -24,11 +24,22 @@ Napisz kompletną lekcję kursu na temat: **{{topic}}**.
 
 {{revision}}
 
-## Ile ma być (z tempa `{{pace}}`)
+## Ile ma być
+
+Te liczby są **ważniejsze niż reguły niżej**. Gdy któraś wynosi **0**, całej rzeczy nie ma:
+sekcja zostaje pusta, a odpowiadającego wywołania `LA.*` w `lesson.js` po prostu nie piszesz.
 
 - pojęć w teorii: **{{concepts}}**, każde jako osobna sekcja `.pojecie`
 - ćwiczeń w praktyce: **dokładnie {{exercises}}**
 - pytań w sprawdzianie: **{{quiz}}**, w tym **{{revisionQuestions}}** z pojęć powtórkowych wyżej
+
+Kształt zamówiony przez użytkownika:
+
+- {{mikro}}
+- {{wizualizacje}}
+- Dozwolone tryby: {{tryby}}
+
+{{uwagi}}
 
 ## Pliki
 
@@ -65,32 +76,35 @@ sprawdzian → sugestie.
 3. **Podwójne kodowanie.** Każde pojęcie to `<section class="pojecie">` z nagłówkiem `<h3>`,
    wyjaśnieniem słownym i reprezentacją wizualną — schematem, osią, wykresem albo tabelą.
    Wizualizację rysuje komponent z biblioteki (sekcja „Komponenty"), nie Ty.
-4. **Aktywne przypominanie.** Każda sekcja teorii kończy się jednym `.mikro-pytanie`:
-   pytanie w `<p>`, odpowiedź w `<div data-chowane>`. Przycisk „Pokaż odpowiedź" dokłada
-   runtime — nie pisz go sam.
+4. **Aktywne przypominanie** (o ile sekcja „Ile ma być" jej nie wyłączyła). Sekcja teorii
+   kończy się jednym `.mikro-pytanie`: pytanie w `<p>`, odpowiedź w `<div data-chowane>`.
+   Przycisk „Pokaż odpowiedź" dokłada runtime — nie pisz go sam.
 5. **Wygaszanie wsparcia.** Przykłady w teorii idą po kolei: pierwszy rozwiązany w całości,
    drugi częściowo (użytkownik dopowiada krok), ostatni do samodzielnego wykonania.
 6. **Ćwiczenia** budujesz w `lesson.js` przez `LA.cwiczenia([...])` — sekcja `#praktyka`
    zostaje w HTML pusta. Polecenia otwarte, do napisania własnymi słowami: ocenia je model,
-   nie przeglądarka. Dokładnie tyle, ile mówi tempo.
+   nie przeglądarka. Dokładnie tyle, ile mówi sekcja „Ile ma być"; przy **0** nie wołasz
+   `LA.cwiczenia` w ogóle.
 7. **Sprawdzian** budujesz w `lesson.js` przez `LA.quiz([...])` — sekcja `#sprawdzian`
-   zostaje w HTML pusta. Pytania wyłącznie zamknięte, każde z uzasadnieniem.
+   zostaje w HTML pusta. Pytania wyłącznie zamknięte, każde z uzasadnieniem. Przy **0**
+   pytaniach nie wołasz `LA.quiz` — przycisk kończący lekcję dokłada wtedy runtime.
 8. **Zero sieci i zero bibliotek.** Żadnych `<img>`, `<link>`, `fetch`, CDN-ów ani czcionek
    z zewnątrz. Lekcja działa offline, otwarta prosto z pliku.
 9. **Cała treść w języku `{{language}}`.** Klucze techniczne, nazwy klas CSS, pola JSON
    i wartości `typ` w sprawdzianie zostają w formie podanej tutaj — nie tłumacz ich.
 10. **Nie powtarzaj tego, co już było.** Pojęcia z listy „co było wcześniej" traktuj jako
     znane: odwołuj się do nich, ale nie tłumacz od zera.
-11. **Każde kluczowe pojęcie ma wizualizację** wywołaną przez `LA.komponent`. Ściana tekstu
-    z obrazkami to nie jest lekcja.
+11. **Wizualizacje** — tyle, ile mówi sekcja „Ile ma być". Domyślnie każde kluczowe pojęcie
+    ma jedną, wywołaną przez `LA.komponent`; ściana tekstu bez niczego to nie jest lekcja.
+    Gdy wizualizacje są wyłączone, reguły 11–14 nie obowiązują.
 12. **Nie pisz `<svg>`, `<canvas>` ani `<text>` własną ręką.** Tekst na sztywnych współrzędnych
     wyjeżdża poza kadr, gdy tylko dane są dłuższe niż w Twoim przykładzie — dlatego rysowanie
     należy do komponentów, które są sprawdzane w przeglądarce. Nie ma pasującego komponentu?
     Zamów nowy w bloku JSON na końcu (sekcja „Komponenty") i wołaj go po nazwie.
-13. **Dobór trybu:** `staly` domyślnie; `parametry` przy zależnościach do pokręcenia;
-    `kroki` przy procesach i algorytmach; `manipulacja` przy strukturach i geometrii;
-    `kod` przy tematach programistycznych. Żadnych własnych suwaków ani przycisków —
-    panel sterowania należy do aplikacji.
+13. **Dobór trybu** spośród dozwolonych w sekcji „Ile ma być": `staly` domyślnie;
+    `parametry` przy zależnościach do pokręcenia; `kroki` przy procesach i algorytmach;
+    `manipulacja` przy strukturach i geometrii; `kod` przy tematach programistycznych.
+    Żadnych własnych suwaków ani przycisków — panel sterowania należy do aplikacji.
 14. **Każda wizualizacja ma stabilne `id`** na pustej sekcji `<section class="demko" id="…">`.
     Po tym id zapamiętywany jest stan lekcji — nie licz go i nie losuj.
 

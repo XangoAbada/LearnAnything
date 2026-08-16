@@ -52,6 +52,8 @@ const texts = {
       'Zacząć tę lekcję od nowa? Odsłonięte odpowiedzi, wpisany kod i sprawdzian znikną. Wynik sprawdzianu w kursie zostaje.',
     anuluj: 'Anuluj',
     bladKomponentu: 'Nie udało się wczytać wizualizacji „{nazwa}”.',
+    ukoncz: 'Ukończyłem tę lekcję',
+    ukonczona: 'Lekcja ukończona.',
   },
   en: {
     show: 'Show answer',
@@ -93,6 +95,8 @@ const texts = {
       'Start this lesson over? Revealed answers, typed code and the quiz will be gone. The saved course score stays.',
     anuluj: 'Cancel',
     bladKomponentu: 'Could not load the “{nazwa}” visualisation.',
+    ukoncz: 'I have finished this lesson',
+    ukonczona: 'Lesson finished.',
   },
 };
 
@@ -1061,6 +1065,34 @@ function dodajRestart() {
   naglowek.append(przycisk);
 }
 
+/**
+ * Lekcja bez sprawdzianu też musi dać się ukończyć: bez tego kurs nie oznaczyłby jej jako
+ * przerobionej i kolejka nie dogenerowałaby następnej. Wynik idzie jako `null` — nie ma czego mierzyć.
+ */
+function dodajUkonczenie(target) {
+  const gotowe = () => {
+    target.replaceChildren(el('p', { className: 'wynik', textContent: tl('ukonczona') }));
+  };
+  if (stan?.czytaj('ukonczona') === true) return gotowe();
+
+  const zapis = el('span', { className: 'zapis' });
+  const przycisk = el('button', { type: 'button', className: 'primary', textContent: tl('ukoncz') });
+  przycisk.addEventListener('click', () => {
+    przycisk.disabled = true;
+    wyslijWynik(null)
+      .then(() => {
+        stan?.zapisz('ukonczona', true);
+        gotowe();
+      })
+      .catch(() => {
+        przycisk.disabled = false;
+        zapis.dataset.stan = 'niezapisany';
+        zapis.textContent = tl('notSaved');
+      });
+  });
+  target.append(przycisk, zapis);
+}
+
 // Node importuje ten moduł dla samej oceny — reszta rusza wyłącznie w przeglądarce.
 if (typeof document !== 'undefined') {
   const { project, lesson } = document.body.dataset;
@@ -1101,4 +1133,10 @@ if (typeof document !== 'undefined') {
   };
   initChowane();
   dodajRestart();
+  // Oba skrypty szablonu są modułami, więc lesson.js wykonał się przed tym zdarzeniem:
+  // pusta sekcja znaczy „ta lekcja nie ma sprawdzianu", a nie „jeszcze się nie narysował".
+  addEventListener('DOMContentLoaded', () => {
+    const sprawdzian = document.getElementById('sprawdzian');
+    if (sprawdzian && !sprawdzian.children.length) dodajUkonczenie(sprawdzian);
+  });
 }

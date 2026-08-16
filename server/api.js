@@ -58,6 +58,34 @@ api.get('/projects/:id', (req, res) => {
   });
 });
 
+// Szkic kreatora: poprawione tytuły planu i opcje treści. Bez modelu, bez kolejki.
+api.patch('/projects/:id', (req, res) => {
+  const project = mustProject(req.params.id);
+  const { plan, content } = req.body ?? {};
+  need(plan !== undefined || content !== undefined, 'nie ma czego zapisać');
+
+  if (plan !== undefined) {
+    if (store.readIndex(project.id).length) {
+      throw new HttpError(409, 'plan tego projektu został już zaakceptowany');
+    }
+    need(Array.isArray(plan?.lessons) && plan.lessons.length, 'plan.lessons musi być niepustą tablicą');
+    need(plan.lessons.every((l) => l?.title?.trim()), 'plan: każda lekcja potrzebuje tytułu');
+    project.plan = {
+      lessons: plan.lessons.map((l) => ({ title: String(l.title).trim(), brief: String(l.brief ?? '').trim() })),
+      range: generator.planRange(project.course.scope),
+    };
+  }
+
+  // Wartość spoza enumu wraca do domyślnej zamiast wywalać żądanie — `contentOf` domyka komplet.
+  if (content !== undefined) {
+    need(content && typeof content === 'object', 'content musi być obiektem');
+    project.content = generator.contentOf({ content });
+  }
+
+  store.writeProject(project);
+  res.json(widok(project));
+});
+
 api.delete('/projects/:id', (req, res) => {
   mustProject(req.params.id);
   store.deleteProject(req.params.id);
@@ -101,13 +129,19 @@ api.post('/projects/:id/interview/skip', (req, res) => {
 
 // --- plan -------------------------------------------------------------------
 
-// Plan nie jest zapisywany przed akceptacją — żyje tylko w tej odpowiedzi.
+// Plan to szkic: zapisany w projekcie, ale bez lekcji i bez kolejki. Dzięki temu wyjście
+// na pulpit nie kosztuje kolejnego wywołania modelu, a kreator wraca tam, gdzie był.
 api.post('/projects/:id/plan', async (req, res) => {
   const project = mustProject(req.params.id);
   const { comment } = req.body ?? {};
+  if (store.readIndex(project.id).length) {
+    throw new HttpError(409, 'plan tego projektu został już zaakceptowany');
+  }
   const plan = await generator.planCourse(project, comment ? String(comment) : '');
-  // Widełki dokładane do odpowiedzi: ekran planu ma pokazać, czemu lekcji jest właśnie tyle.
-  res.json({ ...plan, range: generator.planRange(project.course.scope) });
+  // Widełki w szkicu: ekran planu ma pokazać, czemu lekcji jest właśnie tyle.
+  project.plan = { ...plan, range: generator.planRange(project.course.scope) };
+  store.writeProject(project);
+  res.json(project.plan);
 });
 
 api.post('/projects/:id/plan/accept', (req, res) => {
@@ -130,7 +164,10 @@ api.post('/projects/:id/plan/accept', (req, res) => {
   // z przodu. Reszta planu czeka `zaplanowana` poza kolejką.
   queue.topUp(project.id);
   // Projekt czytany na nowo: kolejkę dopisał enqueue, obiekt w pamięci jej nie zna.
-  res.json({ project: widok(store.readProject(project.id)), lessons: created });
+  const zapisany = store.readProject(project.id);
+  delete zapisany.plan; // szkic zrobił swoje — od teraz źródłem prawdy jest index.json
+  store.writeProject(zapisany);
+  res.json({ project: widok(zapisany), lessons: created });
 });
 
 // --- wynik lekcji -----------------------------------------------------------
@@ -139,12 +176,16 @@ api.post('/projects/:id/plan/accept', (req, res) => {
 api.post('/projects/:id/lessons/:lessonId/result', (req, res) => {
   const project = mustProject(req.params.id);
   const { score } = req.body ?? {};
-  need(Number.isFinite(score) && score >= 0 && score <= 100, 'score musi być liczbą 0–100');
+  // `null` to lekcja bez sprawdzianu, ukończona przyciskiem — ukończenie nie wisi na wyniku.
+  need(
+    score === null || (Number.isFinite(score) && score >= 0 && score <= 100),
+    'score musi być liczbą 0–100 albo null',
+  );
   if (!store.readIndex(project.id).some((l) => l.id === req.params.lessonId)) {
     throw new HttpError(404, `nie ma lekcji ${req.params.lessonId}`);
   }
   const lesson = store.updateLesson(project.id, req.params.lessonId, {
-    score: Math.round(score),
+    score: score === null ? null : Math.round(score),
     status: 'ukończona',
     completedAt: new Date().toISOString(),
   });

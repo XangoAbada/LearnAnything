@@ -45,6 +45,53 @@ const course = () => {
   return { project, second };
 };
 
+test('opcje treści przycinają lekcję: zero pytań, zero ćwiczeń, katalog bez komponentów', async () => {
+  const { project, second } = course();
+  project.content = {
+    sprawdzian: 'brak',
+    praktyka: 'brak',
+    mikroPytania: 'brak',
+    wizualizacje: 'brak',
+    tryby: 'statyczne',
+    uwagi: 'przykłady z produkcji muzycznej',
+  };
+  const run = stub(KOMPLET);
+  await gen(project, second, store.readIndex(project.id), run);
+
+  const { prompt } = run.seen;
+  assert.doesNotMatch(prompt, /\{\{/);
+  assert.match(prompt, /ćwiczeń w praktyce: \*\*dokładnie 0\*\*/);
+  assert.match(prompt, /pytań w sprawdzianie: \*\*0\*\*, w tym \*\*0\*\*/);
+  assert.match(prompt, /Bez `\.mikro-pytanie`/);
+  assert.match(prompt, /Bez wizualizacji/);
+  assert.match(prompt, /Wyłącznie tryb `staly`/);
+  assert.match(prompt, /przykłady z produkcji muzycznej/);
+  // Katalog biblioteki to kilkanaście kilobajtów — lekcja bez wizualizacji go nie dostaje.
+  assert.doesNotMatch(prompt, /`wykres-xy`/);
+});
+
+test('krótszy wariant tnie liczby, nie wyłącza sekcji', async () => {
+  const { project, second } = course();
+  project.content = { sprawdzian: 'krótki', praktyka: 'krótka' };
+  const run = stub(KOMPLET);
+  await gen(project, second, store.readIndex(project.id), run);
+
+  assert.match(run.seen.prompt, /ćwiczeń w praktyce: \*\*dokładnie 1\*\*/);
+  assert.match(run.seen.prompt, /pytań w sprawdzianie: \*\*4\*\*, w tym \*\*1\*\*/);
+});
+
+test('projekt bez opcji generuje się jak dotąd', async () => {
+  const { project, second } = course();
+  const run = stub(KOMPLET);
+  await gen(project, second, store.readIndex(project.id), run);
+
+  const { prompt } = run.seen;
+  assert.match(prompt, /ćwiczeń w praktyce: \*\*dokładnie 3\*\*/);
+  assert.match(prompt, /pytań w sprawdzianie: \*\*8\*\*, w tym \*\*2\*\*/);
+  assert.match(prompt, /Każda sekcja teorii kończy się jednym `\.mikro-pytanie`/);
+  assert.match(prompt, /`wykres-xy`/);
+});
+
 test('prompt niesie szkielet, indeks poprzednich lekcji i słabe punkty', async () => {
   const { project, second } = course();
   const run = stub(KOMPLET);

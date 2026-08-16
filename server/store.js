@@ -36,6 +36,9 @@ export function listProjects() {
         topic: p.topic,
         language: p.language,
         status: p.status,
+        // Krok kreatora — czysta nawigacja pulpitu, żeby kafelek wracał tam, gdzie
+        // użytkownik przerwał. Po akceptacji planu nie ma już kreatora, więc `null`.
+        step: lessons.length ? null : p.plan ? 'plan' : p.status === 'plan' ? 'podsumowanie' : 'wywiad',
         progress: {
           done: lessons.filter((l) => l.status === 'ukończona').length,
           // Wygenerowane, czyli ile kursu już stoi na dysku — to jest pasek na kafelku.

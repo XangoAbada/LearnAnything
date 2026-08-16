@@ -514,6 +514,34 @@ button.danger:hover {
   flex: 1 1 14rem;
 }
 
+/* --- opcje treści lekcji ---------------------------------------------------- */
+
+.opcje-siatka {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0 1rem;
+}
+
+.opcje-zwijane {
+  margin: 1.2rem 0;
+}
+
+.opcje-zwijane > summary {
+  cursor: pointer;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.opcje-zwijane > summary:hover {
+  color: var(--text);
+}
+
+.opcje-zwijane > .panel {
+  margin-top: 0.6rem;
+}
+
 /* --- formularze ------------------------------------------------------------- */
 
 .field {

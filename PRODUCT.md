@@ -62,6 +62,9 @@ Trzy rzeczy naraz, których sąsiednie narzędzia nie mają razem:
 - `lesson.origin`: `plan` · `pośrednia` · `powtórka` · `rozwinięcie` · `nowy wątek`
 - `course.level`: `początkujący` · `średni` · `zaawansowany` · `pace`: `wolne` · `normalne` · `szybkie` · `scope`: `podstawy` · `standardowy` · `szeroki`
 - `verdict` oceny praktyki: `poprawnie` · `częściowo` · `niepoprawnie`
+- `content` (opcje treści lekcji, per projekt): `mikroPytania` `tak`/`brak` · `sprawdzian` `pełny`/`krótki`/`brak` · `praktyka` `pełna`/`krótka`/`brak` · `wizualizacje` `pełne`/`oszczędne`/`brak` · `tryby` `pełne`/`bez-kodu`/`statyczne`, plus `uwagi` — wolny tekst do promptu lekcji. Brak pola = domyślne, czyli zachowanie sprzed opcji.
+
+**Kreator jest trwały.** Odpowiedzi wywiadu, jego podsumowanie i szkic planu (`project.plan`) przeżywają wyjście na pulpit i restart serwera; kafelek projektu wraca do kroku, na którym przerwano. Szkic planu znika przy akceptacji — od tego momentu źródłem prawdy jest `index.json`. Lekcja bez sprawdzianu kończy się przyciskiem, a jej `score` to `null` — ukończenie nie wisi na wyniku, bo to ono dopełnia bufor kolejki.
 
 Nazwy klas komponentów lekcji trafiają do promptu, więc są **ustalone raz i niezmienne**: `.pojecie`, `.diagram`, `.demko`, `.mikro-pytanie`, `.cwiczenie`, `.sprawdzian`, `.sugestie`.
 

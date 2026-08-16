@@ -207,6 +207,81 @@ test('„generuj następną” dokłada po jednej, aż plan się skończy', asyn
   assert.equal((await call('POST', `/projects/${p.id}/lessons/next`)).status, 409);
 });
 
+// --- szkic kreatora: plan i opcje treści ------------------------------------
+
+test('PATCH zapisuje szkic planu i opcje treści, wartość spoza enumu wraca do domyślnej', async () => {
+  const p = await newProject();
+  await call('POST', `/projects/${p.id}/interview/skip`);
+
+  const { status } = await call('PATCH', `/projects/${p.id}`, {
+    plan: { lessons: [{ title: 'Dźwięk', brief: 'b' }, { title: 'Skala' }] },
+    content: { sprawdzian: 'brak', wizualizacje: 'wymyślone', uwagi: '  bez matematyki  ' },
+  });
+  assert.equal(status, 200);
+
+  const saved = store.readProject(p.id);
+  assert.deepEqual(saved.plan.lessons, [
+    { title: 'Dźwięk', brief: 'b' },
+    { title: 'Skala', brief: '' },
+  ]);
+  assert.deepEqual(saved.plan.range, [10, 15]);
+  assert.equal(saved.content.sprawdzian, 'brak');
+  assert.equal(saved.content.wizualizacje, 'pełne', 'wartość spoza enumu wraca do domyślnej');
+  assert.equal(saved.content.uwagi, 'bez matematyki');
+
+  // Pusty PATCH i plan bez tytułów to 400, nie cichy zapis.
+  assert.equal((await call('PATCH', `/projects/${p.id}`, {})).status, 400);
+  assert.equal((await call('PATCH', `/projects/${p.id}`, { plan: { lessons: [] } })).status, 400);
+});
+
+test('akceptacja planu kasuje szkic, a szkic po akceptacji to 409', async () => {
+  const p = await newProject();
+  await call('POST', `/projects/${p.id}/interview/skip`);
+  await call('PATCH', `/projects/${p.id}`, { plan: { lessons: plan(10).lessons } });
+  assert.ok(store.readProject(p.id).plan, 'szkic ma być zapisany przed akceptacją');
+
+  await call('POST', `/projects/${p.id}/plan/accept`, { lessons: plan(10).lessons });
+  assert.equal(store.readProject(p.id).plan, undefined, 'po akceptacji źródłem prawdy jest index.json');
+
+  const { status } = await call('PATCH', `/projects/${p.id}`, { plan: { lessons: plan(10).lessons } });
+  assert.equal(status, 409);
+  // Same opcje treści wolno zmieniać także po akceptacji — dotyczą lekcji jeszcze niewygenerowanych.
+  assert.equal((await call('PATCH', `/projects/${p.id}`, { content: { praktyka: 'brak' } })).status, 200);
+  assert.equal(store.readProject(p.id).content.praktyka, 'brak');
+});
+
+test('lekcja bez sprawdzianu kończy się wynikiem null i dokłada bufor', async () => {
+  const p = await newProject();
+  await call('POST', `/projects/${p.id}/interview/skip`);
+  const { body } = await call('POST', `/projects/${p.id}/plan/accept`, { lessons: plan(10).lessons });
+  const ostatnia = body.lessons.at(-1).id; // poza buforem, więc kolejka jej nie rusza
+
+  const wynik = await call('POST', `/projects/${p.id}/lessons/${ostatnia}/result`, { score: null });
+  assert.equal(wynik.status, 200);
+  assert.equal(wynik.body.score, null);
+  assert.equal(wynik.body.status, 'ukończona');
+  assert.ok(wynik.body.completedAt);
+
+  // Wynik spoza 0–100 nadal odpada — `null` to jedyny nowy przypadek.
+  assert.equal((await call('POST', `/projects/${p.id}/lessons/${ostatnia}/result`, { score: 101 })).status, 400);
+  assert.equal((await call('POST', `/projects/${p.id}/lessons/${ostatnia}/result`, {})).status, 400);
+});
+
+test('krok kreatora prowadzi tam, gdzie użytkownik przerwał', async () => {
+  const p = await newProject();
+  const krok = (id) => store.listProjects().find((x) => x.id === id).step;
+  assert.equal(krok(p.id), 'wywiad');
+
+  await call('POST', `/projects/${p.id}/interview/skip`);
+  assert.equal(krok(p.id), 'podsumowanie');
+
+  await call('PATCH', `/projects/${p.id}`, { plan: { lessons: plan(10).lessons } });
+  assert.equal(krok(p.id), 'plan');
+
+  await call('POST', `/projects/${p.id}/plan/accept`, { lessons: plan(10).lessons });
+  assert.equal(krok(p.id), null, 'po akceptacji kreatora już nie ma');
+});
+
 test.after(() => {
   server.close();
   fs.rmSync(process.env.DATA_DIR, { recursive: true, force: true });

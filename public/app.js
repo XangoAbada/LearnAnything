@@ -59,9 +59,18 @@ export function toggleTheme() {
   document.getElementById('header').replaceChildren(...headerNodes());
 }
 
-/** Wyliczony plan czeka w przeglądarce, żeby wyjście do menu nie kosztowało kolejnego
-    wywołania modelu. Kasuje go akceptacja, przeliczenie i skasowanie projektu. */
-const planKey = (projectId) => `learnanything:${projectId}:plan`;
+/** Odpowiedzi wywiadu w toku: ulotny stan formularza, nie wynik — zostaje w przeglądarce.
+    Plan i podsumowanie idą na serwer, bo są wejściem kolejnego kroku. */
+const interviewKey = (projectId) => `learnanything:${projectId}:interview`;
+
+const readJson = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null');
+  } catch {
+    localStorage.removeItem(key); // uszkodzony wpis nie może zablokować ekranu
+    return null;
+  }
+};
 
 /** Stan lekcji należy do przeglądarki, więc tylko ona wie, kiedy go posprzątać. */
 function forgetLessons(projectId) {
@@ -115,10 +124,13 @@ const progressBar = (done, total, label, aria) =>
 
 // --- ekran 1: lista projektów ----------------------------------------------
 
+// Kafelek wraca tam, gdzie kreator przerwał: wywiad, podsumowanie albo gotowy plan.
 const openHash = (p) =>
-  ({ nowy: `#/p/${p.id}/interview`, wywiad: `#/p/${p.id}/interview`, plan: `#/p/${p.id}/plan` })[
-    p.status
-  ] ?? `#/p/${p.id}`;
+  ({
+    wywiad: `#/p/${p.id}/interview`,
+    podsumowanie: `#/p/${p.id}/interview`,
+    plan: `#/p/${p.id}/plan`,
+  })[p.step] ?? `#/p/${p.id}`;
 
 /**
  * Postęp wszystkich projektów jednym strumieniem — pulpit ma pokazywać stan na teraz, a nie
@@ -283,6 +295,71 @@ const paramsList = (course) =>
     h('dd', { textContent: t(`scope.${course.scope}`) }),
   ]);
 
+// Opcje treści lekcji: te same wartości co `CONTENT` w generatorze — enumy zostają po polsku.
+const CONTENT_OPTIONS = {
+  mikroPytania: ['tak', 'brak'],
+  sprawdzian: ['pełny', 'krótki', 'brak'],
+  praktyka: ['pełna', 'krótka', 'brak'],
+  wizualizacje: ['pełne', 'oszczędne', 'brak'],
+  tryby: ['pełne', 'bez-kodu', 'statyczne'],
+};
+
+const CONTENT_DEFAULT = {
+  mikroPytania: 'tak',
+  sprawdzian: 'pełny',
+  praktyka: 'pełna',
+  wizualizacje: 'pełne',
+  tryby: 'pełne',
+  uwagi: '',
+};
+
+/**
+ * Czym mają być wypełnione kolejne lekcje. Ten sam panel na ekranie planu (przed akceptacją)
+ * i na ekranie projektu (dla lekcji jeszcze niewygenerowanych) — dlatego jest funkcją, nie ekranem.
+ */
+function contentPanel(project, save, naglowek = true) {
+  const content = { ...CONTENT_DEFAULT, ...(project.content ?? {}) };
+  const set = (key, value) => {
+    content[key] = value;
+    save({ ...content });
+  };
+
+  const pole = (key) =>
+    h('label', { className: 'field' }, [
+      h('span', { textContent: t(`content.${key}`) }),
+      h(
+        'select',
+        { value: content[key], onchange: (e) => set(key, e.target.value) },
+        CONTENT_OPTIONS[key].map((value) =>
+          h('option', {
+            value,
+            textContent: t(`content.val.${value}`),
+            selected: value === content[key],
+          }),
+        ),
+      ),
+    ]);
+
+  return h('div', { className: 'panel opcje' }, [
+    naglowek ? h('h2', { textContent: t('content.title') }) : null,
+    h('p', { className: 'muted', textContent: t('content.hint') }),
+    h('div', { className: 'opcje-siatka' }, Object.keys(CONTENT_OPTIONS).map(pole)),
+    h('label', { className: 'field' }, [
+      h('span', { textContent: t('content.uwagi') }),
+      h('textarea', {
+        rows: 2,
+        maxLength: 300,
+        value: content.uwagi,
+        placeholder: t('content.uwagi.placeholder'),
+        oninput: (e) => {
+          content.uwagi = e.target.value; // zapis dopiero na blur — nie PATCH na każdą literę
+        },
+        onchange: (e) => set('uwagi', e.target.value),
+      }),
+    ]),
+  ]);
+}
+
 async function screenInterview([id], s) {
   s.project ??= (await request('GET', `/api/projects/${id}`)).project;
   const project = s.project;
@@ -318,13 +395,18 @@ async function screenInterview([id], s) {
   s.questions ??= project.interview.questions.length
     ? project.interview.questions
     : (await request('POST', `/api/projects/${id}/interview`)).questions;
-  s.i ??= 0;
-  s.answers ??= [];
+  // Wywiad przerwany wyjściem na pulpit wraca z odpowiedziami — pytania i tak są w projekcie.
+  const draft = s.draft ??= readJson(interviewKey(id)) ?? {};
+  s.i ??= Math.min(draft.i ?? 0, s.questions.length - 1);
+  s.answers ??= Array.isArray(draft.answers) ? draft.answers : [];
 
   const q = s.questions[s.i];
   const last = s.i === s.questions.length - 1;
+  const remember = () =>
+    localStorage.setItem(interviewKey(id), JSON.stringify({ i: s.i, answers: s.answers }));
   const setAnswer = (value) => {
     s.answers[s.i] = { id: q.id, answer: value };
+    remember();
   };
   const current = s.answers[s.i]?.answer ?? '';
 
@@ -363,11 +445,13 @@ async function screenInterview([id], s) {
         answer: s.answers[i]?.answer ?? '',
       }));
       s.result = await request('POST', `/api/projects/${id}/interview/answers`, { answers });
+      localStorage.removeItem(interviewKey(id));
     });
 
   const skip = () =>
     act(s, async () => {
       s.result = await request('POST', `/api/projects/${id}/interview/skip`);
+      localStorage.removeItem(interviewKey(id));
     });
 
   return h('section', {}, [
@@ -389,6 +473,7 @@ async function screenInterview([id], s) {
           onclick: () => {
             if (!last) {
               s.i += 1;
+              remember();
               render();
             } else finish();
           },
@@ -417,22 +502,15 @@ async function screenPlan([id], s) {
     s.project = data.project;
   }
   const course = s.project.course;
+  // Szkic planu żyje w projekcie — wyjście na pulpit nie kosztuje kolejnego wywołania modelu.
+  s.plan ??= s.project.plan ?? null;
 
   const load = (comment) =>
     act(s, async () => {
       s.errorKey = 'plan.error.model';
       s.plan = null;
-      localStorage.removeItem(planKey(id));
       s.plan = await request('POST', `/api/projects/${id}/plan`, { comment });
-      localStorage.setItem(planKey(id), JSON.stringify(s.plan));
     });
-
-  // Uszkodzony wpis nie może zablokować ekranu — wtedy plan po prostu liczy się od nowa.
-  try {
-    s.plan ??= JSON.parse(localStorage.getItem(planKey(id)) || 'null');
-  } catch {
-    localStorage.removeItem(planKey(id));
-  }
 
   // Pierwsze wejście: plan liczy się sam. Po błędzie czeka na „Przelicz plan”, nie kręci się w kółko.
   // Flaga busy zamyka też furtkę drugiego wywołania modelu przy przerysowaniu (motyw, język) w trakcie.
@@ -440,7 +518,6 @@ async function screenPlan([id], s) {
     s.busy = true;
     try {
       s.plan = await request('POST', `/api/projects/${id}/plan`, { comment: '' });
-      localStorage.setItem(planKey(id), JSON.stringify(s.plan));
     } catch (err) {
       s.error = err;
     } finally {
@@ -453,8 +530,14 @@ async function screenPlan([id], s) {
       s.errorKey = 'app.error';
       const lessons = s.plan.lessons.map((l) => ({ title: l.title, brief: l.brief }));
       await request('POST', `/api/projects/${id}/plan/accept`, { lessons });
-      localStorage.removeItem(planKey(id));
       location.hash = `#/p/${id}`;
+    });
+
+  // Zapis szkicu bez modelu: poprawiony tytuł i opcje treści mają przeżyć wyjście z ekranu.
+  const patch = (body) =>
+    request('PATCH', `/api/projects/${id}`, body).catch((err) => {
+      s.error = err;
+      render();
     });
 
   const row = (lesson, i) =>
@@ -467,8 +550,8 @@ async function screenPlan([id], s) {
         'aria-label': t('plan.lesson.title', { n: i + 1 }),
         oninput: (e) => {
           lesson.title = e.target.value;
-          localStorage.setItem(planKey(id), JSON.stringify(s.plan));
         },
+        onchange: () => patch({ plan: { lessons: s.plan.lessons } }),
       }),
       h('span', { className: 'muted brief', textContent: lesson.brief }),
     ]);
@@ -486,6 +569,10 @@ async function screenPlan([id], s) {
         scope: t(`scope.${course.scope}`),
       }),
     }),
+    // Podsumowanie wywiadu zostaje w zasięgu wzroku — to na jego podstawie powstał ten plan.
+    s.project.interview?.summary
+      ? h('p', { className: 'muted', textContent: s.project.interview.summary })
+      : null,
     s.plan
       ? h('p', {
           className: 'muted',
@@ -493,6 +580,10 @@ async function screenPlan([id], s) {
         })
       : null,
     s.error ? errorBox(s.error, s.errorKey ?? 'plan.error.model') : null,
+    contentPanel(s.project, (content) => {
+      s.project.content = content;
+      patch({ content });
+    }),
     s.plan ? h('ol', { className: 'plan' }, s.plan.lessons.map(row)) : null,
     h('div', { className: 'actions' }, [
       h('button', {
@@ -788,6 +879,22 @@ async function screenProject([id], s) {
       ]),
     ]),
     s.error ? errorBox(s.error, 'add.error') : null,
+    // Opcje treści zostają dostępne po akceptacji planu — dotyczą lekcji jeszcze
+    // niewygenerowanych, więc chowają się w <details>, żeby nie przykrywać kursu.
+    h('details', { className: 'opcje-zwijane' }, [
+      h('summary', { textContent: t('content.title') }),
+      contentPanel(
+        project,
+        (content) => {
+          project.content = content;
+          request('PATCH', `/api/projects/${id}`, { content }).catch((err) => {
+            s.error = err;
+            render();
+          });
+        },
+        false, // nagłówek niesie już <summary>
+      ),
+    ]),
     // Karta propozycji nad listą: rodzaj, czego dotyczy i dlaczego się pojawiła.
     // Jeden przycisk, żadnego automatu — bez kliknięcia nic się nie generuje.
     [...suggestions, ...(s.threads ?? [])].length
