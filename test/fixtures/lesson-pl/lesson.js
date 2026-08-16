@@ -114,7 +114,8 @@ LA.demoManipulacja({
           )
           .join('')}
         <path class="fala" stroke="var(--wiz-3)" d="${sciezka(barwa, 235, 55)}" />
-        <text class="opis" x="8" y="176">wypadkowa</text>
+        <!-- Podpis fali siada nad nią, nie w rzędzie numerów alikwotów (y = DOL + 20). -->
+        <text class="opis" x="8" y="205">wypadkowa</text>
       </svg>`;
   },
 });
