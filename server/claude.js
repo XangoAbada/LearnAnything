@@ -42,6 +42,7 @@ export function queryOptions({ stage, cwd, allowedTools = [], maxTurns = 1, abor
  * @param {number}  [p.maxTurns]     domyślnie 1 dla zadań tekstowych
  * @param {number}  [p.timeoutMs]    domyślnie 120_000; lekcje dostają więcej
  * @param {string}  [p.stage]        etap aplikacji — decyduje o modelu i poziomie rozumowania
+ * @param {(m: object) => void} [p.onMessage] podgląd ruchu modelu; jedyne źródło postępu w locie
  * @returns {Promise<string>}        tekst wyniku
  */
 export async function runClaude({
@@ -51,6 +52,7 @@ export async function runClaude({
   maxTurns = 1,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   stage,
+  onMessage,
 }) {
   const abortController = new AbortController();
   // Sam abortController nie przerywa wywołania w locie (sprawdzone: abort po 1 s, wynik po 6 s),
@@ -71,6 +73,11 @@ export async function runClaude({
       if (message.type === 'result') {
         if (message.subtype === 'success') return message.result;
         throw new Error(`claude: ${message.subtype}`);
+      }
+      try {
+        onMessage?.(message);
+      } catch {
+        /* podgląd postępu to ozdoba — nie ma prawa zabić generowania lekcji */
       }
     }
     throw new Error('claude: strumień skończył się bez wyniku');

@@ -863,3 +863,44 @@ body[data-lesson] {
     animation: none !important;
   }
 }
+
+/* --- potwierdzenie (confirm.js) ---------------------------------------------
+   Poza body[data-lesson]: ten sam modal służy powłoce i lekcji. Przyciski biorą
+   wygląd ze strony (app.css albo warstwy lekcji), tu tylko karta i tło. */
+
+/* ramka gradientami, nie border: clip-path ścinający narożnik ucina też obramowanie
+   (ten sam zabieg co .panel w app.css) */
+dialog.confirm {
+  max-width: min(32rem, calc(100vw - 2rem));
+  margin: auto;
+  padding: 1.3rem 1.4rem 1.15rem;
+  color: var(--text);
+  border: 0;
+  background:
+    linear-gradient(var(--border), var(--border)) top left / 100% 1px no-repeat,
+    linear-gradient(var(--border), var(--border)) bottom left / 100% 1px no-repeat,
+    linear-gradient(var(--border), var(--border)) top left / 1px 100% no-repeat,
+    linear-gradient(var(--border), var(--border)) top right / 1px 100% no-repeat,
+    var(--surface);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+  filter: var(--drop-lift);
+}
+
+dialog.confirm::backdrop {
+  background: rgb(10 10 10 / 55%);
+  backdrop-filter: blur(2px);
+}
+
+dialog.confirm p {
+  max-width: none;
+  margin: 0 0 1.3rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+dialog.confirm .confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}

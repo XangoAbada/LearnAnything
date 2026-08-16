@@ -18,13 +18,11 @@ const need = (cond, message) => {
   if (!cond) throw new HttpError(400, message);
 };
 
-// Po enqueue projekt trzeba czytać z dysku na nowo — kolejkę dopisała kolejka, nie my.
-const markGenerating = (id) => {
-  const project = store.readProject(id);
-  if (!project) return;
-  project.status = 'generowanie';
-  store.writeProject(project);
-};
+// Status projektu nie jest przechowywany od czasu, gdy projekt ma lekcje — liczy go kolejka
+// z indeksu i z tego, co właśnie chodzi. Zapisany `status` rządzi tylko przed planem.
+// ponytail: drugi odczyt project.json + index.json na projekt; przy kilku projektach lokalnie
+// to nic. Gdyby lista puchła — listProjects musiałoby oddawać oba pliki naraz.
+const widok = (p) => ({ ...p, status: queue.projectStatus(p.id) ?? p.status });
 
 const mustProject = (id) => {
   const project = store.readProject(id);
@@ -36,7 +34,7 @@ export const api = express.Router();
 
 // --- projekty ---------------------------------------------------------------
 
-api.get('/projects', (req, res) => res.json(store.listProjects()));
+api.get('/projects', (req, res) => res.json(store.listProjects().map(widok)));
 
 api.post('/projects', (req, res) => {
   const { topic, language } = req.body ?? {};
@@ -49,7 +47,7 @@ api.get('/projects/:id', (req, res) => {
   const project = mustProject(req.params.id);
   const lessons = store.readIndex(project.id);
   res.json({
-    project,
+    project: widok(project),
     lessons,
     queue: queue.queueState(project.id),
     // Liczone tu i teraz, nigdzie nie zapisywane — i nic nie kolejkujące. Do kolejki
@@ -127,13 +125,11 @@ api.post('/projects/:id/plan/accept', (req, res) => {
     return acc;
   }, []);
 
-  project.status = 'generowanie';
-  store.writeProject(project);
   // Generowanie rusza z kliknięcia użytkownika, nie samo — i tylko na bufor lekcji
   // z przodu. Reszta planu czeka `zaplanowana` poza kolejką.
   queue.topUp(project.id);
   // Projekt czytany na nowo: kolejkę dopisał enqueue, obiekt w pamięci jej nie zna.
-  res.json({ project: store.readProject(project.id), lessons: created });
+  res.json({ project: widok(store.readProject(project.id)), lessons: created });
 });
 
 // --- wynik lekcji -----------------------------------------------------------
@@ -153,8 +149,7 @@ api.post('/projects/:id/lessons/:lessonId/result', (req, res) => {
   });
   // Ukończona lekcja zwalnia miejsce w buforze — kolejna dogenerowuje się teraz, a nie
   // wtedy, gdy użytkownik na nią trafi. Nadal spust użytkownika: to jego sprawdzian.
-  // Projekt czytany na nowo: kolejkę dopisał enqueue, obiekt sprzed topUp jej nie zna.
-  if (queue.topUp(project.id)) markGenerating(project.id);
+  queue.topUp(project.id);
   res.json(lesson);
 });
 
@@ -214,7 +209,6 @@ api.post('/projects/:id/lessons', (req, res) => {
   // Prosto do kolejki, z pominięciem bufora: użytkownik poprosił o TĘ lekcję. Wejdzie przed
   // dalsze lekcje z planu (kolejka bierze najniższy `order`), ale nie przerwie bieżącej.
   queue.enqueue(project.id, lesson.id);
-  markGenerating(project.id);
   res.status(201).json(lesson);
 });
 
@@ -233,7 +227,6 @@ api.post('/projects/:id/lessons/next', (req, res) => {
   const project = mustProject(req.params.id);
   const lesson = queue.enqueueNext(project.id);
   if (!lesson) throw new HttpError(409, 'nie ma już lekcji do wygenerowania');
-  markGenerating(project.id);
   res.json(lesson);
 });
 
@@ -243,21 +236,29 @@ api.post('/projects/:id/lessons/:lessonId/retry', (req, res) => {
   const lesson = store.readIndex(project.id).find((l) => l.id === req.params.lessonId);
   if (!lesson) throw new HttpError(404, `nie ma lekcji ${req.params.lessonId}`);
 
-  const updated = store.updateLesson(project.id, lesson.id, { status: 'zaplanowana', error: null });
-  project.status = 'generowanie';
-  store.writeProject(project);
+  // Ręczne ponowienie kasuje licznik prób: użytkownik dostaje pełną pulę od nowa.
+  const updated = store.updateLesson(project.id, lesson.id, {
+    status: 'zaplanowana',
+    error: null,
+    attempts: 0,
+  });
   queue.enqueue(project.id, lesson.id);
   res.json(updated);
 });
 
 // --- postęp generowania (SSE) -----------------------------------------------
 
-const clients = new Map(); // projectId -> Set<res>
+const clients = new Map(); // projectId albo '*' (pulpit) -> Set<res>
 const HEARTBEAT = ':\n\n'; // komentarz SSE: ruch bez treści
+const WSZYSTKIE = '*'; // klucz pulpitu; nie koliduje z id projektu (8 znaków hex)
 
 queue.events.on('event', ({ projectId, type, data }) => {
-  for (const res of clients.get(projectId) ?? []) {
-    res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+  const ramka = (payload) => `event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const res of clients.get(projectId) ?? []) res.write(ramka(data));
+  // Pulpit dostaje kamienie milowe, nie każdą turę modelu — postęp lekcji zatrzymujemy tutaj,
+  // bo filtr po stronie serwera jest tańszy niż dyscyplina po stronie klienta.
+  if (type !== 'lesson-progress') {
+    for (const res of clients.get(WSZYSTKIE) ?? []) res.write(ramka({ ...data, projectId }));
   }
 });
 
@@ -266,8 +267,8 @@ setInterval(() => {
   for (const set of clients.values()) for (const res of set) res.write(HEARTBEAT);
 }, 30_000).unref();
 
-api.get('/projects/:id/events', (req, res) => {
-  mustProject(req.params.id);
+/** Wpina odpowiedź w strumień pod danym kluczem i sprząta po zamknięciu połączenia. */
+const subscribe = (key, req, res) => {
   res.writeHead(200, {
     'content-type': 'text/event-stream',
     'cache-control': 'no-cache',
@@ -276,14 +277,22 @@ api.get('/projects/:id/events', (req, res) => {
   });
   res.write(HEARTBEAT); // otwiera strumień u klienta, zanim padnie pierwsze zdarzenie
 
-  const set = clients.get(req.params.id) ?? new Set();
+  const set = clients.get(key) ?? new Set();
   set.add(res);
-  clients.set(req.params.id, set);
+  clients.set(key, set);
   req.on('close', () => {
     set.delete(res);
-    if (!set.size) clients.delete(req.params.id);
+    if (!set.size) clients.delete(key);
   });
+};
+
+api.get('/projects/:id/events', (req, res) => {
+  mustProject(req.params.id);
+  subscribe(req.params.id, req, res);
 });
+
+// Strumień pulpitu: wszystkie projekty naraz, każde zdarzenie z `projectId` w danych.
+api.get('/events', (req, res) => subscribe(WSZYSTKIE, req, res));
 
 // --- ustawienia modelu ------------------------------------------------------
 
@@ -297,20 +306,27 @@ api.get('/settings', (req, res) =>
     bufor: store.readBuffer(),
     buforDefault: store.DEFAULT_BUFFER,
     buforMax: store.BUFFER_MAX,
+    naraz: store.readNaraz(),
+    narazDefault: store.DEFAULT_NARAZ,
+    narazMax: store.NARAZ_MAX,
   }),
 );
 
 api.put('/settings', (req, res) => {
-  const { settings, bufor } = req.body ?? {};
+  const { settings, bufor, naraz } = req.body ?? {};
   need(settings === undefined || (settings && typeof settings === 'object'), 'settings musi być obiektem');
   try {
-    // Bufor pierwszy: writeSettings scala z zawartością pliku, więc świeży bufor przetrwa.
+    // Skalary pierwsze: writeSettings scala z zawartością pliku, więc świeże wartości przetrwają.
     if (bufor !== undefined) store.writeBuffer(bufor);
+    if (naraz !== undefined) store.writeNaraz(naraz);
     if (settings !== undefined) store.writeSettings(settings);
   } catch (err) {
     throw new HttpError(400, err.message);
   }
-  res.json({ settings: store.readSettings(), bufor: store.readBuffer() });
+  // Podniesiony limit działa od razu, bez czekania na kolejne zlecenie użytkownika. Bez `await`:
+  // obietnica kończy się dopiero z całą kolejką, czyli za kilkanaście minut.
+  queue.startWorker();
+  res.json({ settings: store.readSettings(), bufor: store.readBuffer(), naraz: store.readNaraz() });
 });
 
 // --- błędy ------------------------------------------------------------------

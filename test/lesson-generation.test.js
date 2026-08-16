@@ -62,6 +62,38 @@ test('prompt niesie szkielet, indeks poprzednich lekcji i słabe punkty', async 
   assert.equal(saved.title, 'Skale');
 });
 
+test('postęp lekcji melduje zapisane pliki i numer tury', async () => {
+  const { project, second } = course();
+  const kroki = [];
+  const run = async (params) => {
+    params.onMessage({ type: 'system', subtype: 'init' }); // nie-asystenckie się nie liczy
+    params.onMessage({
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'text', text: 'piszę' },
+          { type: 'tool_use', name: 'Write', input: { file_path: `${params.cwd}/index.html` } },
+          { type: 'tool_use', name: 'Write', input: { file_path: `${params.cwd}/notatki.md` } },
+        ],
+      },
+    });
+    // Nadpisanie tego samego pliku nie może cofnąć ani podbić paska.
+    params.onMessage({
+      type: 'assistant',
+      message: {
+        content: [{ type: 'tool_use', name: 'Write', input: { file_path: `${params.cwd}/index.html` } }],
+      },
+    });
+    for (const name of KOMPLET) fs.writeFileSync(path.join(params.cwd, name), 'x', 'utf8');
+    return ODPOWIEDZ;
+  };
+
+  await generateLesson(project, second, [], run, (p) => kroki.push(p));
+
+  assert.equal(kroki.length, 2, 'wiadomość spoza asystenta nie jest turą');
+  assert.deepEqual(kroki.at(-1), { turn: 2, files: ['index.html'], total: 3 });
+});
+
 test('pierwsza lekcja idzie bez powtórek', async () => {
   const project = store.createProject({ topic: 'Teoria muzyki', language: 'en' });
   const lesson = store.addLesson(project.id, { afterOrder: 0, title: 'What sound is' });

@@ -3,24 +3,29 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 // DATA_DIR musi stać przed importem store.js — config rozwiązuje ścieżkę raz, przy imporcie.
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'learnanything-'));
 const store = await import('../server/store.js');
 const queue = await import('../server/queue.js');
 
-// Zaślepka generatora: zapisuje kolejność wywołań i pilnuje, że nigdy nie chodzą dwa naraz.
+// Zaślepka generatora: zapisuje kolejność wywołań, pilnuje jednej lekcji NA PROJEKT
+// i zapamiętuje szczyt równoległości w `calls.max`.
 const spy = (body) => {
   const calls = [];
-  let live = 0;
+  const live = new Map(); // projectId -> ile lekcji tego projektu chodzi
+  // Nieprzeliczalna, żeby deepEqual na `calls` porównywało samą listę wywołań.
+  Object.defineProperty(calls, 'max', { value: 0, writable: true });
   queue.useGenerator(async (project, lesson, index) => {
-    live += 1;
-    assert.equal(live, 1, 'dwie lekcje generowane jednocześnie');
+    live.set(project.id, (live.get(project.id) ?? 0) + 1);
+    assert.equal(live.get(project.id), 1, 'dwie lekcje jednego projektu naraz');
+    calls.max = Math.max(calls.max, [...live.values()].reduce((a, b) => a + b, 0));
     calls.push(lesson.id);
     try {
       return (await body?.(project, lesson, index)) ?? { summary: `o ${lesson.title}`, covers: ['x'] };
     } finally {
-      live -= 1;
+      live.set(project.id, live.get(project.id) - 1);
     }
   });
   return calls;
@@ -37,6 +42,9 @@ const course = (titles) => {
 
 const drain = () => queue.startWorker();
 
+// Bez tego każdy test porażki czekałby prawdziwe 5 i 20 sekund między próbami.
+queue.useBackoff([0, 0]);
+
 test('lekcje idą po kolei, po jednej naraz', async () => {
   const calls = spy();
   const { project, lessons } = course(['A', 'B', 'C']);
@@ -49,7 +57,7 @@ test('lekcje idą po kolei, po jednej naraz', async () => {
     ['gotowa', 'gotowa', 'gotowa'],
   );
   assert.deepEqual(store.readProject(project.id).queue, []);
-  assert.equal(store.readProject(project.id).status, 'gotowy');
+  assert.equal(queue.projectStatus(project.id), 'gotowy');
 });
 
 test('summary i covers z modelu lądują w indeksie', async () => {
@@ -82,7 +90,28 @@ test('wstawka 1.1 wchodzi przed 2, ale nie przerywa generowanej 1', async () => 
   assert.deepEqual(calls, ['l1', inserted.id, 'l2', 'l3']); // l1 dokończone, wstawka przed l2
 });
 
-test('porażka daje status błąd i nie zatrzymuje kolejki', async () => {
+test('porażka ponawia tę samą lekcję i lekcja dochodzi do skutku', async () => {
+  let padnij = true;
+  const calls = spy(async () => {
+    if (padnij) {
+      padnij = false;
+      throw new Error('pierwsza próba pada');
+    }
+    return { summary: 's', covers: ['c'] };
+  });
+
+  const { project, lessons } = course(['A', 'B']);
+  for (const l of lessons) queue.enqueue(project.id, l.id);
+  await drain();
+
+  const [first, second] = store.readIndex(project.id);
+  assert.deepEqual(calls, ['l1', 'l1', 'l2'], 'l2 nie ma prawa wejść przed dokończeniem l1');
+  assert.equal(first.status, 'gotowa');
+  assert.equal(first.attempts, 0, 'sukces kasuje licznik prób');
+  assert.equal(second.status, 'gotowa');
+});
+
+test('po wyczerpaniu prób lekcja zostaje z błędem i zatrzymuje kurs', async () => {
   const calls = spy(async (_project, lesson) => {
     if (lesson.id === 'l1') throw new Error('model odmówił');
     return { summary: 's', covers: ['c'] };
@@ -93,31 +122,37 @@ test('porażka daje status błąd i nie zatrzymuje kolejki', async () => {
   await drain();
 
   const [first, second] = store.readIndex(project.id);
-  assert.deepEqual(calls, ['l1', 'l2']);
+  assert.deepEqual(calls, ['l1', 'l1', 'l1'], `dokładnie ${queue.PROBY} podejścia`);
   assert.equal(first.status, 'błąd');
+  assert.equal(first.attempts, queue.PROBY);
   assert.match(first.error, /model odmówił/);
-  assert.equal(second.status, 'gotowa');
+  assert.equal(second.status, 'zaplanowana', 'lekcja po błędnej nie może powstać bez jej podsumowania');
+  assert.equal(queue.projectStatus(project.id), 'błąd');
 });
 
-test('ponowienie wraca do kolejki i generuje od nowa', async () => {
+test('ręczne ponowienie odblokowuje kurs', async () => {
   let fail = true;
   const calls = spy(async () => {
-    if (fail) throw new Error('pierwsza próba pada');
+    if (fail) throw new Error('próba pada');
     return { summary: 's', covers: ['c'] };
   });
 
-  const { project, lessons } = course(['A']);
-  queue.enqueue(project.id, lessons[0].id);
+  const { project, lessons } = course(['A', 'B']);
+  for (const l of lessons) queue.enqueue(project.id, l.id);
   await drain();
   assert.equal(store.readIndex(project.id)[0].status, 'błąd');
 
   fail = false;
-  store.updateLesson(project.id, lessons[0].id, { status: 'zaplanowana', error: null });
+  store.updateLesson(project.id, lessons[0].id, { status: 'zaplanowana', error: null, attempts: 0 });
   queue.enqueue(project.id, lessons[0].id);
   await drain();
 
-  assert.deepEqual(calls, ['l1', 'l1']);
-  assert.equal(store.readIndex(project.id)[0].status, 'gotowa');
+  assert.deepEqual(calls, ['l1', 'l1', 'l1', 'l1', 'l2'], 'po odblokowaniu wchodzi też l2');
+  assert.deepEqual(
+    store.readIndex(project.id).map((l) => l.status),
+    ['gotowa', 'gotowa'],
+  );
+  assert.equal(queue.projectStatus(project.id), 'gotowy');
 });
 
 test('recoverOnBoot przestawia generowaną na zaplanowaną i dokańcza kolejkę', async () => {
@@ -129,7 +164,8 @@ test('recoverOnBoot przestawia generowaną na zaplanowaną i dokańcza kolejkę'
   store.writeProject(stored);
   store.updateLesson(project.id, lessons[0].id, { status: 'generowana' });
 
-  assert.equal(queue.recoverOnBoot(), 1);
+  // >= 1, bo katalog danych dzielą wszystkie testy w pliku — inne projekty też mogą mieć zaległości.
+  assert.ok(queue.recoverOnBoot() >= 1);
   await drain();
 
   assert.deepEqual(calls, ['l1']);
@@ -215,11 +251,13 @@ test('lekcja z błędem nie liczy się do zapasu i nie wraca sama', async () => 
   await drain();
 
   assert.equal(store.readIndex(project.id)[0].status, 'błąd');
-  // Zapas pusty (błąd się nie liczy), więc topUp bierze NASTĘPNĄ, a nie tę z błędem.
+  // Zapas pusty (błąd się nie liczy), więc topUp bierze NASTĘPNĄ, a nie tę z błędem…
   assert.equal(queue.topUp(project.id), 1);
   await drain();
-  assert.deepEqual(calls, ['l1', 'l2']);
+  // …ale wygenerować jej nie wolno, dopóki l1 leży: kolejka projektu stoi na błędzie.
+  assert.deepEqual(calls, ['l1', 'l1', 'l1']);
   assert.equal(store.readIndex(project.id)[0].status, 'błąd');
+  assert.equal(store.readIndex(project.id)[1].status, 'zaplanowana');
 });
 
 test('enqueueNext dokłada mimo pełnego bufora i zwraca null, gdy nie ma czego', async () => {
@@ -235,6 +273,77 @@ test('enqueueNext dokłada mimo pełnego bufora i zwraca null, gdy nie ma czego'
   assert.equal(queue.enqueueNext(project.id), null);
 });
 
+// --- równoległość projektów -------------------------------------------------
+
+// Zaślepka z przerwą daje drugiej pętli okno na wejście. Żadnych bramek „czekaj, aż wejdzie
+// druga” — regresja dałaby wtedy wiszący test zamiast czerwonego.
+const wolno = () => sleep(20);
+
+test('dwa projekty jadą równolegle przy naraz = 2', async (t) => {
+  store.writeNaraz(2);
+  t.after(() => store.writeNaraz(1));
+
+  const calls = spy(wolno);
+  const a = course(['A']);
+  const b = course(['B']);
+  queue.enqueue(a.project.id, a.lessons[0].id);
+  queue.enqueue(b.project.id, b.lessons[0].id);
+  await drain();
+
+  assert.equal(calls.max, 2, 'druga pętla nie ruszyła');
+  assert.equal(store.readIndex(a.project.id)[0].status, 'gotowa');
+  assert.equal(store.readIndex(b.project.id)[0].status, 'gotowa');
+});
+
+test('w jednym projekcie nadal jedna lekcja naraz', async (t) => {
+  store.writeNaraz(4);
+  t.after(() => store.writeNaraz(1));
+
+  const calls = spy(wolno);
+  const { project, lessons } = course(['A', 'B', 'C']);
+  for (const l of lessons) queue.enqueue(project.id, l.id);
+  await drain();
+
+  assert.deepEqual(calls, ['l1', 'l2', 'l3']); // kolejny prompt potrzebuje summary poprzedniej
+  assert.equal(calls.max, 1);
+});
+
+test('naraz z ustawień jest sufitem równoległości', async (t) => {
+  store.writeNaraz(2);
+  t.after(() => store.writeNaraz(1));
+
+  const calls = spy(wolno);
+  for (const titles of [['A'], ['B'], ['C']]) {
+    const { project, lessons } = course(titles);
+    queue.enqueue(project.id, lessons[0].id);
+  }
+  await drain();
+
+  assert.equal(calls.length, 3);
+  assert.equal(calls.max, 2, 'trzeci projekt wjechał ponad limit');
+});
+
+// --- status wyliczany -------------------------------------------------------
+
+test('projectStatus liczy się z lekcji i kolejki, nie z pliku projektu', async () => {
+  spy();
+  const pusty = store.createProject({ topic: 'Bez lekcji', language: 'pl' });
+  assert.equal(queue.projectStatus(pusty.id), 'nowy', 'brak lekcji → status zapisany');
+
+  const { project, lessons } = course(['A', 'B']);
+  assert.equal(queue.projectStatus(project.id), 'w toku');
+
+  queue.enqueue(project.id, lessons[0].id); // kolejka na dysku już niepusta
+  assert.equal(queue.projectStatus(project.id), 'generowanie');
+  await drain();
+  assert.equal(queue.projectStatus(project.id), 'w toku', 'l2 wciąż zaplanowana');
+
+  queue.enqueue(project.id, lessons[1].id);
+  await drain();
+  assert.equal(queue.projectStatus(project.id), 'gotowy');
+  assert.equal(queue.projectStatus('nie-ma-takiego'), null);
+});
+
 test('gotowy dopiero, gdy nie ma już lekcji do wygenerowania', async () => {
   store.writeBuffer(2);
   spy();
@@ -242,9 +351,9 @@ test('gotowy dopiero, gdy nie ma już lekcji do wygenerowania', async () => {
   queue.topUp(project.id);
   await drain();
 
-  assert.notEqual(store.readProject(project.id).status, 'gotowy', 'kurs z niewygenerowaną lekcją');
+  assert.equal(queue.projectStatus(project.id), 'w toku', 'kurs z niewygenerowaną lekcją');
 
   queue.enqueueNext(project.id);
   await drain();
-  assert.equal(store.readProject(project.id).status, 'gotowy');
+  assert.equal(queue.projectStatus(project.id), 'gotowy');
 });

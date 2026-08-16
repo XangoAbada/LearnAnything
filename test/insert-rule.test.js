@@ -97,7 +97,8 @@ test('nowa lekcja ląduje w kolejce z własnym origin, przed dalszymi lekcjami z
   const { body } = await dodaj(p, 4, 'powtórka', 'rekurencja');
   const projekt = store.readProject(p.id);
   assert.ok(projekt.queue.includes(body.id), 'wstawka nie trafiła do kolejki');
-  assert.equal(projekt.status, 'generowanie');
+  // Status nie jest zapisywany, tylko liczony z kolejki — na dysku zostaje ostatni etap sprzed planu.
+  assert.equal(queue.projectStatus(p.id), 'generowanie');
   assert.equal(store.readIndex(p.id).find((l) => l.id === body.id).origin, 'powtórka');
 
 });

@@ -36,6 +36,8 @@ export function listProjects() {
         status: p.status,
         progress: {
           done: lessons.filter((l) => l.status === 'ukończona').length,
+          // Wygenerowane, czyli ile kursu już stoi na dysku — to jest pasek na kafelku.
+          ready: lessons.filter((l) => l.status === 'gotowa' || l.status === 'ukończona').length,
           total: lessons.length,
         },
       };
@@ -291,5 +293,27 @@ export function readBuffer() {
 export function writeBuffer(n) {
   if (!validBuffer(n)) throw new Error(`bufor musi być liczbą całkowitą 1–${BUFFER_MAX}`);
   writeJson(settingsFile(), { ...readJson(settingsFile(), {}), bufor: n });
+  return n;
+}
+
+// --- ile projektów naraz ----------------------------------------------------
+
+// Ile RÓŻNYCH projektów generuje się równolegle. W obrębie projektu i tak leci jedna lekcja
+// naraz. Każdy równoległy projekt to osobny proces Claude Code na opusie — stąd niski sufit.
+export const DEFAULT_NARAZ = 1;
+export const NARAZ_MAX = 4;
+
+const validNaraz = (n) => Number.isInteger(n) && n >= 1 && n <= NARAZ_MAX;
+
+/** @returns {number} */
+export function readNaraz() {
+  const n = readJson(settingsFile(), {}).naraz;
+  return validNaraz(n) ? n : DEFAULT_NARAZ;
+}
+
+/** @throws przy wartości spoza 1–NARAZ_MAX */
+export function writeNaraz(n) {
+  if (!validNaraz(n)) throw new Error(`naraz musi być liczbą całkowitą 1–${NARAZ_MAX}`);
+  writeJson(settingsFile(), { ...readJson(settingsFile(), {}), naraz: n });
   return n;
 }

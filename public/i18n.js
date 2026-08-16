@@ -17,6 +17,7 @@ export const dict = {
     'app.theme.ciemny': 'Ciemny',
     'app.lang.toggle': 'Przełącz język interfejsu',
     'app.settings': 'Ustawienia',
+    'app.cancel': 'Anuluj',
 
     'lang.pl': 'polski',
     'lang.en': 'angielski',
@@ -29,6 +30,7 @@ export const dict = {
     'projects.new.language': 'Język kursu',
     'projects.new.submit': 'Utwórz projekt',
     'projects.progress': 'Ukończone: {done} z {total}',
+    'projects.generated': 'Wygenerowane: {ready} z {total}',
     'projects.language': 'Język kursu: {lang}',
     'spec.lessons': 'Lekcje',
     'spec.language': 'Język',
@@ -66,6 +68,8 @@ export const dict = {
     'project.empty': 'Ten projekt nie ma jeszcze żadnej lekcji.',
     'project.progress': 'Gotowe: {done} z {total}',
     'project.progress.label': 'Postęp generowania kursu',
+    'project.lesson.progress': 'pliki {done}/{total} · tura {turn}',
+    'project.lesson.progress.label': 'Postęp generowania lekcji',
     'project.retry': 'Ponów',
     'project.retry.for': 'Ponów generowanie lekcji {title}',
     'project.score': 'Wynik sprawdzianu: {score}%',
@@ -112,6 +116,9 @@ export const dict = {
     'settings.buffer': 'Lekcje generowane z góry',
     'settings.buffer.hint':
       'Ile lekcji ma czekać gotowych przed tobą. Kolejne dogenerują się po ukończeniu lekcji.',
+    'settings.parallel': 'Projekty naraz',
+    'settings.parallel.hint':
+      'Ile kursów generuje się równolegle. W jednym kursie lekcje i tak powstają po kolei.',
     'settings.intro':
       'Każdy etap ma własny model i poziom rozumowania. Cięższe zadania — plan kursu i lekcja — zasługują na mocniejszy model; krótkie pytania wywiadu nie.',
     'settings.stage': 'Etap',
@@ -150,9 +157,11 @@ export const dict = {
     'status.wywiad': 'wywiad',
     'status.plan': 'plan',
     'status.generowanie': 'generowanie',
+    'status.w toku': 'w toku',
     'status.gotowy': 'gotowy',
     'status.zaplanowana': 'zaplanowana',
     'status.niewygenerowana': 'niewygenerowana',
+    'status.ponawiana': 'ponawiana',
     'status.generowana': 'generowana',
     'status.gotowa': 'gotowa',
     'status.ukończona': 'ukończona',
@@ -183,6 +192,7 @@ export const dict = {
     'app.theme.ciemny': 'Dark',
     'app.lang.toggle': 'Switch interface language',
     'app.settings': 'Settings',
+    'app.cancel': 'Cancel',
 
     'lang.pl': 'Polish',
     'lang.en': 'English',
@@ -195,6 +205,7 @@ export const dict = {
     'projects.new.language': 'Course language',
     'projects.new.submit': 'Create project',
     'projects.progress': 'Completed: {done} of {total}',
+    'projects.generated': 'Generated: {ready} of {total}',
     'projects.language': 'Course language: {lang}',
     'spec.lessons': 'Lessons',
     'spec.language': 'Language',
@@ -232,6 +243,8 @@ export const dict = {
     'project.empty': 'This project has no lessons yet.',
     'project.progress': 'Ready: {done} of {total}',
     'project.progress.label': 'Course generation progress',
+    'project.lesson.progress': 'files {done}/{total} · turn {turn}',
+    'project.lesson.progress.label': 'Lesson generation progress',
     'project.retry': 'Retry',
     'project.retry.for': 'Retry generating lesson {title}',
     'project.score': 'Quiz score: {score}%',
@@ -278,6 +291,9 @@ export const dict = {
     'settings.buffer': 'Lessons generated ahead',
     'settings.buffer.hint':
       'How many lessons stay ready ahead of you. More are generated as you complete lessons.',
+    'settings.parallel': 'Projects at once',
+    'settings.parallel.hint':
+      'How many courses generate in parallel. Within one course lessons are still built in order.',
     'settings.intro':
       'Each stage gets its own model and reasoning level. Heavier work — the course plan and the lesson — deserves a stronger model; short interview questions do not.',
     'settings.stage': 'Stage',
@@ -316,9 +332,11 @@ export const dict = {
     'status.wywiad': 'interview',
     'status.plan': 'plan',
     'status.generowanie': 'generating',
+    'status.w toku': 'in progress',
     'status.gotowy': 'ready',
     'status.zaplanowana': 'planned',
     'status.niewygenerowana': 'not generated',
+    'status.ponawiana': 'retrying',
     'status.generowana': 'generating',
     'status.gotowa': 'ready',
     'status.ukończona': 'completed',

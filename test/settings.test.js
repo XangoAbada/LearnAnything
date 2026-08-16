@@ -70,3 +70,27 @@ test('zapis ustawień modelu nie kasuje bufora', () => {
   store.writeSettings({ plan: { model: 'sonnet', effort: 'low' } });
   assert.equal(store.readBuffer(), 7);
 });
+
+// --- ile projektów naraz ----------------------------------------------------
+
+test('naraz ma wartość domyślną i daje się zapisać', () => {
+  assert.equal(store.readNaraz(), store.DEFAULT_NARAZ);
+  assert.equal(store.writeNaraz(3), 3);
+  assert.equal(store.readNaraz(), 3);
+});
+
+test('naraz spoza zakresu jest odrzucany', () => {
+  store.writeNaraz(2);
+  for (const zly of [0, -1, 1.5, store.NARAZ_MAX + 1, '2', null]) {
+    assert.throws(() => store.writeNaraz(zly), /naraz/, `przeszło: ${zly}`);
+  }
+  assert.equal(store.readNaraz(), 2, 'odrzucony zapis nie miał prawa nic zmienić');
+});
+
+test('bufor i naraz nie kasują się nawzajem ani przez zapis modeli', () => {
+  store.writeBuffer(6);
+  store.writeNaraz(4);
+  store.writeSettings({ lekcja: { model: 'opus', effort: 'high' } });
+  assert.equal(store.readBuffer(), 6);
+  assert.equal(store.readNaraz(), 4);
+});

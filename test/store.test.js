@@ -103,7 +103,7 @@ test('listProjects zwraca postęp policzony z indeksu', () => {
   store.addLesson(p.id, { afterOrder: 1, title: 'Dwa' });
   store.updateLesson(p.id, l1.id, { status: 'ukończona' });
   const entry = store.listProjects().find((x) => x.id === p.id);
-  assert.deepEqual(entry.progress, { done: 1, total: 2 });
+  assert.deepEqual(entry.progress, { done: 1, ready: 1, total: 2 });
   assert.equal(entry.topic, 'Teoria muzyki');
   assert.equal(entry.language, 'pl');
 });

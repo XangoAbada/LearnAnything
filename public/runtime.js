@@ -7,6 +7,8 @@
 // Po polsku są tylko nazwy z kontraktu: eksporty, kształt sprawdzianu i klasy CSS —
 // prompt lekcji (faza 06) mówi nimi. Wnętrza idą po angielsku, jak reszta kodu.
 
+import { confirmDialog } from './confirm.js';
+
 // Lekcja ma własny słownik zamiast i18n.js powłoki: kilkanaście przycisków jest tańsze
 // niż zależność, a język lekcji siedzi w <body data-lang>, nie w ustawieniu powłoki.
 const texts = {
@@ -48,6 +50,7 @@ const texts = {
     restart: 'Zacznij od nowa',
     restartPytanie:
       'Zacząć tę lekcję od nowa? Odsłonięte odpowiedzi, wpisany kod i sprawdzian znikną. Wynik sprawdzianu w kursie zostaje.',
+    anuluj: 'Anuluj',
   },
   en: {
     show: 'Show answer',
@@ -87,6 +90,7 @@ const texts = {
     restart: 'Start over',
     restartPytanie:
       'Start this lesson over? Revealed answers, typed code and the quiz will be gone. The saved course score stays.',
+    anuluj: 'Cancel',
   },
 };
 
@@ -943,8 +947,13 @@ function dodajRestart() {
     className: 'restart',
     textContent: tl('restart'),
   });
-  przycisk.addEventListener('click', () => {
-    if (!confirm(tl('restartPytanie'))) return;
+  przycisk.addEventListener('click', async () => {
+    const tak = await confirmDialog(tl('restartPytanie'), {
+      ok: tl('restart'),
+      cancel: tl('anuluj'),
+      danger: true,
+    });
+    if (!tak) return;
     stan.wyczysc();
     location.reload();
   });

@@ -1,4 +1,5 @@
 import { t, getLang, setLang, LANGS } from './i18n.js';
+import { confirmDialog } from './confirm.js';
 
 // Powłoka: routing po hashu, motyw, ekrany 1–3. Bez frameworka i bez szablonów —
 // temat projektu i tytuły lekcji pochodzą od użytkownika i idą wyłącznie przez textContent/value.
@@ -96,6 +97,22 @@ const back = () => h('a', { className: 'back', href: '#/', textContent: t('app.b
 // Zagięcia arkusza Miury idą na przemian: górskie, dolinne. Kod niesie pozycję i nic więcej.
 const creaseCode = (i) => `${i % 2 ? 'V' : 'M'}-${String(i + 1).padStart(2, '0')}`;
 
+/** Pasek pokrycia: ta sama linia co przy kursie, wypełniana ułamkiem `--done`. */
+const progressBar = (done, total, label, aria) =>
+  h(
+    'div',
+    {
+      className: 'progress',
+      role: 'progressbar',
+      'aria-label': aria,
+      'aria-valuemin': '0',
+      'aria-valuemax': String(total),
+      'aria-valuenow': String(done),
+      style: `--done:${total ? done / total : 0}`,
+    },
+    [h('span', { className: 'bar' }), h('span', { className: 'label', textContent: label })],
+  );
+
 // --- ekran 1: lista projektów ----------------------------------------------
 
 const openHash = (p) =>
@@ -103,8 +120,28 @@ const openHash = (p) =>
     p.status
   ] ?? `#/p/${p.id}`;
 
+/**
+ * Postęp wszystkich projektów jednym strumieniem — pulpit ma pokazywać stan na teraz, a nie
+ * z chwili wejścia. Postęp pojedynczej lekcji tu nie dociera (serwer go nie wysyła na '*').
+ */
+function listenAll(s) {
+  const es = new EventSource('/api/events');
+  const refresh = () =>
+    request('GET', '/api/projects')
+      .then((projects) => {
+        s.projects = projects;
+        render();
+      })
+      .catch(() => {}); // zerwane połączenie odbudowuje EventSource, nie my
+  for (const type of ['lesson-started', 'lesson-ready', 'lesson-failed', 'queue-empty']) {
+    es.addEventListener(type, refresh);
+  }
+  return es;
+}
+
 async function screenProjects(_params, s) {
   s.projects ??= await request('GET', '/api/projects');
+  s.es ??= listenAll(s);
   s.form ??= { topic: '', language: getLang() };
 
   const create = () =>
@@ -160,8 +197,13 @@ async function screenProjects(_params, s) {
     ],
   );
 
-  const remove = (p) => {
-    if (!confirm(t('projects.delete.confirm', { topic: p.topic }))) return;
+  const remove = async (p) => {
+    const yes = await confirmDialog(t('projects.delete.confirm', { topic: p.topic }), {
+      ok: t('projects.delete'),
+      cancel: t('app.cancel'),
+      danger: true,
+    });
+    if (!yes) return;
     act(s, async () => {
       await request('DELETE', `/api/projects/${p.id}`);
       forgetLessons(p.id);
@@ -201,6 +243,15 @@ async function screenProjects(_params, s) {
           }),
         ]),
       ]),
+      // Ile kursu już stoi na dysku. Licznik wyżej mówi o nauce, ten pasek o generowaniu.
+      p.progress.total
+        ? progressBar(
+            p.progress.ready,
+            p.progress.total,
+            t('projects.generated', { ready: p.progress.ready, total: p.progress.total }),
+            t('project.progress.label'),
+          )
+        : null,
       h('div', { className: 'actions' }, [
         h('button', {
           className: 'ghost danger',
@@ -493,8 +544,17 @@ function listen(id, s) {
       })
       .catch(() => {}); // zerwane połączenie odbudowuje EventSource, nie my
   for (const type of ['lesson-started', 'lesson-ready', 'lesson-failed', 'queue-empty']) {
-    es.addEventListener(type, refresh);
+    es.addEventListener(type, (e) => {
+      s.gen = null; // postęp dotyczył lekcji, która właśnie się zaczęła albo skończyła
+      refresh(e);
+    });
   }
+  // Postęp lekcji leci kilkanaście razy na lekcję — rysujemy go z samego zdarzenia,
+  // bez odpytywania serwera o cały projekt.
+  es.addEventListener('lesson-progress', (e) => {
+    s.gen = JSON.parse(e.data);
+    render();
+  });
   return es;
 }
 
@@ -511,6 +571,11 @@ async function screenProject([id], s) {
   // więc dalsza część planu czeka nietknięta.
   const wKolejce = (l) => queue.running === l.id || queue.waiting.includes(l.id);
   const czeka = (l) => l.status === 'zaplanowana' && !wKolejce(l);
+  // Lekcja po nieudanym podejściu wraca do „zaplanowana”, ale nadal siedzi w kolejce —
+  // etykieta ma o tym mówić, zamiast udawać, że nic się nie stało.
+  const ponawiana = (l) => l.status === 'zaplanowana' && (l.attempts ?? 0) > 0 && wKolejce(l);
+  const etykieta = (l) =>
+    (czeka(l) && 'status.niewygenerowana') || (ponawiana(l) && 'status.ponawiana') || `status.${l.status}`;
 
   const retry = (lesson) =>
     act(s, async () => {
@@ -673,10 +738,23 @@ async function screenProject([id], s) {
             textContent: `${lesson.score}%`,
             title: t('project.score', { score: lesson.score }),
           }),
+      // Postęp pokazujemy tylko przy tej lekcji, która właśnie się generuje.
+      lesson.status === 'generowana' && s.gen?.lessonId === lesson.id
+        ? progressBar(
+            s.gen.files.length,
+            s.gen.total,
+            t('project.lesson.progress', {
+              done: s.gen.files.length,
+              total: s.gen.total,
+              turn: s.gen.turn,
+            }),
+            t('project.lesson.progress.label'),
+          )
+        : null,
       h('span', {
         className: 'state',
         'data-state': lesson.status,
-        textContent: t(czeka(lesson) ? 'status.niewygenerowana' : `status.${lesson.status}`),
+        textContent: t(etykieta(lesson)),
         // Treść błędu z serwera tylko jako podpowiedź — na ekranie zostaje etykieta stanu.
         title: lesson.error ?? '',
       }),
@@ -724,24 +802,11 @@ async function screenProject([id], s) {
     h('h2', { textContent: t('project.lessons') }),
     // Lista rysuje się dopiero, gdy jest co rysować — pusty <ol> zostawiał kreskę nad niczym.
     lessons.length
-      ? h(
-          'div',
-          {
-            className: 'progress',
-            role: 'progressbar',
-            'aria-label': t('project.progress.label'),
-            'aria-valuemin': '0',
-            'aria-valuemax': String(lessons.length),
-            'aria-valuenow': String(ready),
-            style: `--done:${ready / lessons.length}`,
-          },
-          [
-            h('span', { className: 'bar' }),
-            h('span', {
-              className: 'label',
-              textContent: t('project.progress', { done: ready, total: lessons.length }),
-            }),
-          ],
+      ? progressBar(
+          ready,
+          lessons.length,
+          t('project.progress', { done: ready, total: lessons.length }),
+          t('project.progress.label'),
         )
       : null,
     lessons.length
@@ -850,7 +915,7 @@ async function screenSettings(_params, s) {
   const save = () =>
     act(s, async () => {
       s.saved = false;
-      await request('PUT', '/api/settings', { settings, bufor: s.data.bufor });
+      await request('PUT', '/api/settings', { settings, bufor: s.data.bufor, naraz: s.data.naraz });
       s.saved = true;
     });
 
@@ -861,7 +926,8 @@ async function screenSettings(_params, s) {
       s.saved = false;
       for (const stage of Object.keys(settings)) settings[stage] = { ...s.data.defaults[stage] };
       s.data.bufor = s.data.buforDefault;
-      await request('PUT', '/api/settings', { settings, bufor: s.data.bufor });
+      s.data.naraz = s.data.narazDefault;
+      await request('PUT', '/api/settings', { settings, bufor: s.data.bufor, naraz: s.data.naraz });
       s.saved = true;
     });
 
@@ -935,6 +1001,24 @@ async function screenSettings(_params, s) {
         'aria-label': t('settings.buffer'),
         oninput: (e) => {
           s.data.bufor = Number(e.target.value);
+          s.saved = false;
+        },
+      }),
+    ]),
+    h('div', { className: 'stage-row' }, [
+      h('div', { className: 'stage-name' }, [
+        h('strong', { textContent: t('settings.parallel') }),
+        h('small', { className: 'muted', textContent: t('settings.parallel.hint') }),
+      ]),
+      h('input', {
+        type: 'number',
+        className: 'bufor',
+        min: '1',
+        max: String(s.data.narazMax ?? 4),
+        value: String(s.data.naraz),
+        'aria-label': t('settings.parallel'),
+        oninput: (e) => {
+          s.data.naraz = Number(e.target.value);
           s.saved = false;
         },
       }),

@@ -185,14 +185,38 @@ const weakPoints = (previous) =>
     '(brak — nic nie wymaga nadrabiania)',
   );
 
+const fileName = (p) => String(p ?? '').split(/[\\/]/).pop();
+
+/**
+ * Ruch modelu → kamienie milowe: które pliki lekcji już poszły na dysk i która to tura.
+ * Kształt wiadomości SDK nie jest kontraktem — cokolwiek nieoczekiwanego po prostu się nie liczy.
+ */
+const progressReporter = (onProgress) => {
+  const files = new Set(); // zbiór, więc nadpisanie pliku nie cofa paska
+  let turn = 0;
+  return (message) => {
+    if (message?.type !== 'assistant') return;
+    turn += 1;
+    for (const block of message.message?.content ?? []) {
+      if (block?.type !== 'tool_use' || block.name !== 'Write') continue;
+      const name = fileName(block.input?.file_path);
+      if (LESSON_FILES.includes(name)) files.add(name);
+    }
+    onProgress({ turn, files: [...files], total: LESSON_FILES.length });
+  };
+};
+
 /**
  * Pisze pliki lekcji na dysk przez Claude'a i zwraca opis tego, co powstało.
  * @param {object} project
  * @param {object} lesson wpis z indeksu
  * @param {object[]} index cały indeks lekcji — kontekst bierze się z lekcji o niższym `order`
+ * @param {Function} [run] zaślepka modelu dla testów
+ * @param {(p: {turn: number, files: string[], total: number}) => void} [onProgress] podgląd postępu;
+ *   piąty argument, bo `run` jest czwartym od dawna i tak wołają go wszystkie testy
  * @returns {Promise<{summary: string, covers: string[]}>}
  */
-export async function generateLesson(project, lesson, index = [], run = runClaude) {
+export async function generateLesson(project, lesson, index = [], run = runClaude, onProgress) {
   const previous = index.filter((l) => l.order < lesson.order);
   const revision = [...new Set(previous.flatMap((l) => l.covers ?? []))];
   const shape = PACE_SHAPE[project.course.pace] ?? PACE_SHAPE.normalne;
@@ -235,6 +259,7 @@ export async function generateLesson(project, lesson, index = [], run = runClaud
     allowedTools: ['Write', 'Read'],
     maxTurns: 30, // trzy pliki plus poprawki — z zapasem
     timeoutMs: 20 * 60_000, // lekcja liczy się w minutach, nie sekundach
+    ...(onProgress ? { onMessage: progressReporter(onProgress) } : {}),
   });
 
   // cwd bez additionalDirectories to granica zapisu; to jest jej sprawdzenie po fakcie.
