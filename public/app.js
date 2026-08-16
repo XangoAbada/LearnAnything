@@ -828,13 +828,16 @@ async function screenSettings(_params, s) {
       s.saved = true;
     });
 
-  // Przywraca tylko w formularzu — zapis nadal wymaga „Zapisz", więc pomyłka kosztuje odejście z ekranu.
-  const reset = () => {
-    for (const stage of Object.keys(settings)) settings[stage] = { ...s.data.defaults[stage] };
-    s.data.bufor = s.data.buforDefault;
-    s.saved = false;
-    render();
-  };
+  // Przywraca i od razu zapisuje. Sam reset formularza wyglądał jak zrobiony, a po wyjściu
+  // z ekranu przepadał — przycisk ma zostawiać ustawienia domyślne, nie tylko je pokazać.
+  const reset = () =>
+    act(s, async () => {
+      s.saved = false;
+      for (const stage of Object.keys(settings)) settings[stage] = { ...s.data.defaults[stage] };
+      s.data.bufor = s.data.buforDefault;
+      await request('PUT', '/api/settings', { settings, bufor: s.data.bufor });
+      s.saved = true;
+    });
 
   const row = (stage, i) => {
     const current = settings[stage];
